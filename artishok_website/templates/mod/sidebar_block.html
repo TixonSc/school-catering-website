@@ -1,0 +1,16 @@
+{% block sidebar %}
+<div class="sidebar-container">
+    <div class="sidebar">
+        <h2 onclick="window.location.href='{% url 'mod_index' %}'" style="cursor: pointer;">Головне меню</h2>
+        <p onclick="window.location.href='{% url 'applications' %}'" style="cursor: pointer;">Заявки на створення</p>
+        {% for key, value in sb.items %}
+            {% if key == 'view_school' %}
+                <p onclick="window.location.href='{% url key school_id=value.id %}'" style="cursor: pointer;">{{ value }}</p>
+            {% else %}
+                <p onclick="window.location.href='{% url key %}'" style="cursor: pointer;">{{ value }}</p>
+            {% endif %}
+        {% endfor %}
+        <p onclick="window.location.href='{% url 'home' %}'" style="cursor: pointer;">Загальнодоступна сторінка</p>
+    </div>
+</div>
+{% endblock %}

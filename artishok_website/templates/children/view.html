@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Діти{% endblock%}
+
+{% block content%}
+<form method="post">
+    <div class="container">
+        <h1 class="title">Діти</h1>
+        <a class="button-add button" href="{% url 'add_child'%}" name="add_child_button">Додати</a>
+        <div class="card-list">
+            {% for card in cards %}
+            {% if card.child.verified == 1 %}
+            {% include "children/child_card.html" with child=card.child cart=card.cart%}
+            {% endif %}
+            {% endfor %}
+            {% for card in cards %}
+            {% if card.child.verified == 0 %}
+            {% include "children/child_card.html" with child=card.child cart='0'%}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "mod/base_mod.html" %}
+
+{% block styles %}
+  {{ block.super }}
+    .container {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    }
+    
+    .column {
+    flex: 1;
+    }
+    
+    @media screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    }
+    
+    #toggle-checkbox:checked ~ #select-dish {
+        display: none;
+    }
+    
+    #select-dish {
+        display: block;
+    }
+    
+    #select-product {
+        display: none;
+    }
+    
+    #toggle-checkbox:checked ~ #select-product {
+        display: block;
+    }
+    
+    /* CSS for the hidden element */
+    #ingredient-form {
+        display: none; /* Hide the element by default */
+    }
+    
+    /* CSS to show the element when button is clicked */
+    #ingredient-form.show {
+        display: block; /* Show the element when "show" class is added */
+    }
+    
+    /* CSS for the hidden element */
+    #menu_item-form {
+        display: none; /* Hide the element by default */
+    }
+    
+    /* CSS to show the element when button is clicked */
+    #menu_item-form.show {
+        display: block; /* Show the element when "show" class is added */
+    }
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="column">
+      <h1>{{ menu.name }}</h1>
+      <form method="post" autocomplete="off">
+        {% csrf_token %}
+        {{ menu_form.as_p }}
+        <button type="submit" name="menu_button">Зберегти</button>
+      </form>
+    </div>
+    <div class="column">
+      <h3>Список меню</h3>
+      <ol>
+        {% for menu_item in menu_items %}
+          <li>
+            <div style="display: flex; flex-wrap: wrap; flex-direction: row;"><div style="margin-right: 10px;">{{ menu_item }}</div>
+              <form method="POST" action="{% url 'delete_menu_item' pk=menu_item.id menu_id=menu.id %}">
+                {% csrf_token %}
+                <input type="submit" value="X">
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+      </br>
+      <button id="add-menu_item-btn" onclick="document.getElementById('menu_item-form').classList.toggle('show')">Додати позицію в меню</button>
+      <form method="post" autocomplete="off" id="menu_item-form">
+        {% csrf_token %}
+        <div id="add-menu_item-form">
+          <div id="select-dish">
+            <label for="dishdropdown">Страва:</label>
+            <select id="dishdropdown" name="dish_id">
+              <option value=""> </option>
+              {% for dish in dishes %}
+                <option value="{{ dish.id }}">{{ dish }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+              <label for="price">Ціна:</label>
+              <input type="number" name="price" id="price" step="5" min="0">
+            </div>
+            <div>
+              <label for="weight">Вага:</label>
+              <input type="number" name="weight" id="weight" step="50" min="0">
+            </div>
+          <button type="submit" name="menu_id" value="{{ menu.id }}" id="menu_item_add_button">Додати</button>
+        </div>
+      </form>
+    </div>
+  </div>        
+{% endblock %}

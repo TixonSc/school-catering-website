@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>{% block title %}Default title{% endblock title %}</title>
+    {% block scripts %}{% endblock scripts %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dev_border.css' %}">
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <nav class="nav">
+          <div class="nav-header">
+              <a class="nav-title" href="/">
+               <img width="200px" height="auto" src="{% static 'images/logo-artishok.png' %}" alt="logo">
+              </a>
+          </div>
+          <input type="checkbox" id="nav-check">
+            <label for="nav-check">
+              <svg class="nav-icon-burger" width="24" height="14">
+                <use xlink:href="/static/images/symbol-defs.svg#icon-burger">
+                </use>
+              </svg>
+              <svg class="nav-icon-cross"  width="24" height="14">
+                <use xlink:href="/static/images/symbol-defs.svg#icon-cross">
+                </use>
+              </svg>
+            </label>
+          <ul class="nav-list">
+            <li>
+              <a href="{% url 'home' %}">Головна</a>
+            </li>
+            {% if profile.user.is_authenticated %}
+            <li>
+              <a href="{% url 'children'%}">Діти</a>
+            </li>
+            <li>
+              <a href="{% url 'orders'%}">Замовлення</a>
+            </li>
+            <li>
+              <a href="{% url 'profile'%}">Профіль</a>
+            </li>
+            {% block additional_nav_btn %}{% endblock additional_nav_btn %}
+            {% if profile %}
+            {% if profile.role != 0 %}
+            <li>
+            <a href="{% url 'mod_index' %}">Модерація</a>
+            </li>
+            {% endif %}
+            {% endif %}
+            <li>
+              <a href="{% url 'logout' %}">Вийти</a>
+            </li>
+            {% else %}
+            <li>
+              <a href="{% url 'login' %}">Авторизація</a>
+            </li>
+            <li>
+              <a href="{% url 'register' %}">Реєстрація</a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <div class="content">{% block content%}{% endblock content %}</div>
+  </body>
+</html>

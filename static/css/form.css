@@ -1,0 +1,28 @@
+.form {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form__data {
+
+}
+
+.form__item {
+
+}
+
+.label {
+
+}
+
+.input-text {
+
+}
+
+.form__hint {
+    transition: all .3s ease-in;
+    color: #ff0000;
+    position: absolute;
+    left: 10px;
+    top: calc(100% + 5px);
+}

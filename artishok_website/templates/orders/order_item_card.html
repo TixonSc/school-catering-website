@@ -1,0 +1,43 @@
+<div class="item" data-item-id="{{item.id}}">
+    <div class="image">
+        <img src="" width="120" height="120">
+    </div>
+
+    <div class="info_bar-order">
+        <div class="info">
+            <div class="name">
+                <h3>
+                    {{ item.menu_item_id.dish_id.name }}
+                </h3>
+            </div>
+            
+            <div class="row">
+                <div class="cost">
+                    <p>
+                        {{ item.price }}грн.
+                    </p>
+                </div>
+
+                <div class="weight">
+                    <p>
+                        {{ item.menu_item_id.weight }}грам
+                    </p>
+                </div>
+            </div>
+
+            <div class="description">
+                <p>
+                    {{ item.menu_item_id.dish_id.description }}
+                </p>
+            </div>
+        </div>
+
+
+        <div class="counter">
+            <p>
+                Порцій: {{ item.count_portion }} 
+            </p>
+        </div>
+
+    </div>
+</div>

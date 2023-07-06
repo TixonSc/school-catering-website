@@ -1,0 +1,115 @@
+{% extends "mod/base_mod.html" %}
+
+{% block content %}
+    <h1>Заявки</h1>
+  {% if pending %}
+    <h2 style="color: blue">Очікують&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;●</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Дитина</th>
+          <th>Навчальний заклад</th>
+          <th>Клас</th>
+          <th>Користувач</th>
+          <th>Ел. Пошта</th>
+          <th>⬇</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in pending %}
+          <tr>
+            <td>{{ request.student_name }} ({{ request.student_data.phone_number }}, {{ request.student_data.birth_date }})</td>
+            <td>{{ request.school }}</td>
+            <td>{{ request.class }}</td>
+            <td>{{ request.parent_name }} ({{ request.parent_data.phone_number }})</td>
+            <td>{{ request.parent_data.user_email }}</td>
+            <td>
+                <form action="{% url 'update_request' request.id 1 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">Підтвердити</button>
+                </form>
+                <form action="{% url 'update_request' request.id 2 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">Відхилити</button>
+                </form>
+              </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if approved %}
+    <h2 style="color: green">Підтверджені</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Дитина</th>
+          <th>Навчальний заклад</th>
+          <th>Клас</th>
+          <th>Користувач</th>
+          <th>Ел. Пошта</th>
+          <th>⬇</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in approved %}
+          <tr>
+            <td>{{ request.student_name }} ({{ request.student_data.phone_number }}, {{ request.student_data.birth_date }})</td>
+            <td>{{ request.school }}</td>
+            <td>{{ request.class }}</td>
+            <td>{{ request.parent_name }} ({{ request.parent_data.phone_number }})</td>
+            <td>{{ request.parent_data.user_email }}</td>
+            <td>
+                <form action="{% url 'update_request' request.id 0 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">В очікування</button>
+                </form>
+                <form action="{% url 'update_request' request.id 2 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">Відхилити</button>
+                </form>
+              </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if refused %}
+    <h2 style="color: red">Відхилені</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Дитина</th>
+          <th>Навчальний заклад</th>
+          <th>Клас</th>
+          <th>Користувач</th>
+          <th>Ел. Пошта</th>
+          <th>⬇</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in refused %}
+          <tr>
+            <td>{{ request.student_name }} ({{ request.student_data.phone_number }}, {{ request.student_data.birth_date }})</td>
+            <td>{{ request.school }}</td>
+            <td>{{ request.class }}</td>
+            <td>{{ request.parent_name }} ({{ request.parent_data.phone_number }})</td>
+            <td>{{ request.parent_data.user_email }}</td>
+            <td>
+                <form action="{% url 'update_request' request.id 0 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">В очікування</button>
+                </form>
+                <form action="{% url 'update_request' request.id 1 %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit">Підтвердити</button>
+                </form>
+              </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endblock %}

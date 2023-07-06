@@ -1,0 +1,101 @@
+{% extends "mod/base_mod.html" %}
+{% load static %}
+
+{% block script %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{% static 'js/mod_creating_table.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Створення таблиці</h1>
+
+<div class="control-panel">
+    <div class="template">    
+        <fieldset>
+            <legend>Виберіть шаблон таблиці</legend>
+        
+            <div>
+                <label for="purchase">Тижневий - закупка</label>
+                <input type="radio" id="purchase" class="template-radio" name="template-radio" value="purchase">
+            </div>
+        
+            <div>
+                <label for="cooking">Денний - приготування</label>
+                <input type="radio" id="cooking" class="template-radio" name="template-radio" value="cooking">
+            </div>
+        
+            <div>
+                <label for="prepare">Лінія видачі - приготовано</label>
+                <input type="radio" id="prepare" class="template-radio" name="template-radio" value="prepare">
+            </div>
+        </fieldset>
+    </div>
+
+    <div class="selectors" hidden>
+        <div  class="school-class" hidden>
+            <fieldset>
+                <legend>Виберіть школу та клас</legend>
+
+                <div>
+                    <label class="label" for="school-select">Виберіть школу:</label>
+                    <select class="select" id="school-select" name="school-select">
+                        <option value="all" selected>Всі щколи</option>
+                    </select>
+                </div>
+            
+                <div>
+                    <label class="label" for="class-select">Виберіть клас:</label>
+                    <select class="select" id="class-select" name="class-select">
+                        <option value="all" selected>Всі класи</option>
+                    </select>
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="date" hidden>
+            <fieldset>
+                <legend>Виберіть день</legend>
+
+                <div>
+                    <label for="date">День:</label>
+                    <input type="date" id="date" value="">
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="detail" hidden>
+            <fieldset>
+                <legend>Виберіть рівень деталізації</legend>
+
+                <div class="pupil">
+                    <label for="pupil">По учням</label>
+                    <input type="radio" id="pupil" class="detail-radio" name="detail-radio" value="pupil" checked>
+                </div>
+                
+                <div class="class">
+                    <label for="class">По класам</label>
+                    <input type="radio" id="class" class="detail-radio" name="detail-radio" value="class">
+                </div>
+                
+                <div class="school">
+                    <label for="school">По школам</label>
+                    <input type="radio" id="school" class="detail-radio" name="detail-radio" value="school">
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <div>
+        <input type="button" id="gen-tab" value="Сгенерувати таблицю" disabled>
+    </div>
+    <div>
+        <input type="button" id="download-tab" value="Завантажити таблицю" disabled>
+    </div>
+</div>
+
+<div class="table">
+    {% comment %} - [ ]  Відображення кнопки **завантаження таблиці на пк** {% endcomment %}
+    {% comment %} - [ ]  Відображення таблиці на сайті {% endcomment %}
+    {% comment %} - [ ]  Кнопка - закрити таблицю, біля таблиці. {% endcomment %}
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "mod/base_mod.html" %}
+{% block styles %}
+  {{ block.super }}
+  .pupils-container {
+    display: none;
+  }
+
+  .pupils-container.expanded {
+    display: block;
+  }
+{% endblock %}
+{% block content %}
+<h1>Класи</h1>
+  <ul>
+    {% for class_item in classes %}
+      <li>
+        <h2>{{ class_item.class_id }}</h2>
+        <ul>
+          {% for operator in class_item.operators %}
+            <li>
+              {{ operator }}
+              <a href="{% url 'remove_privileges' profile_id=operator.id %}">
+                <button>Видалити</button>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <form method="POST" action="{% url 'add_operator' %}">
+            {% csrf_token %}
+            <input type="hidden" name="class_id" value="{{ class_item.class_id.id }}">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <button type="submit">Додати керівника класу</button>
+        </form>
+        <button class="expand-button">Показати учнів {{ class_item.class_id.name }}</button>
+        <div class="pupils-container">
+          <h3>Підтверджені учні:</h3>
+          <ul>
+            {% for pupil in class_item.pupils.approved %}
+              <li>{{ pupil }}</li>
+            {% endfor %}
+          </ul>
+          <h3>Очікують підтвердження:</h3>
+          <ul>
+            {% for pupil in class_item.pupils.pending %}
+              <li>{{ pupil }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <script>
+    // Handle expanding/collapsing pupils container
+    const expandButtons = document.querySelectorAll('.expand-button');
+    expandButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const pupilsContainer = button.nextElementSibling;
+        pupilsContainer.classList.toggle('expanded');
+      });
+    });
+  </script>
+    
+{% endblock %}

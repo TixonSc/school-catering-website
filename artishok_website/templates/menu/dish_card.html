@@ -1,0 +1,109 @@
+<style>
+    .item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .image img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .info_bar {
+        flex-grow: 1;
+        margin-left: 20px;
+    }
+
+    .name h3 {
+        font-size: 18px;
+        color: #333;
+        margin: 0;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        margin-top: 5px;
+    }
+
+    .cost,
+    .weight {
+        margin-right: 10px;
+    }
+
+    .cost h4,
+    .weight h4 {
+        font-size: 14px;
+        color: #555;
+        margin: 0;
+    }
+
+    .description {
+        font-size: 14px;
+        color: #777;
+        margin: 10px 0 0;
+    }
+    .actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .action-button {
+        padding: 5px 10px;
+        font-size: 16px;
+        border: none;
+        background-color: #ccc;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .action-button:hover {
+        background-color: #999;
+    }
+
+    .number {
+        margin: 0 10px;
+        font-size: 18px;
+    }
+</style>
+
+<div class="item" data-item-id="{{ item.id }}">
+    <div class="image">
+        <img src="" width="120" height="120">
+    </div>
+
+    <div class="info_bar">
+        <div class="info">
+            <div class="name">
+                <h3>{{ item.dish_id.name }}</h3>
+            </div>
+
+            <div class="row">
+                <div class="cost">
+                    <h4>{{ item.price }} грн.</h4>
+                </div>
+
+                <div class="weight">
+                    <h4>{{ item.weight }} грам</h4>
+                </div>
+            </div>
+
+            <p class="description">{{ item.dish_id.description }}</p>
+        </div>
+
+        <div class="actions">
+            <div class="minus">
+                <button class="action-button" onclick="clickMinus('{{item.id}}', '{{meal_id}}')">-</button>
+            </div>
+
+            <div class="number">
+                <span class="counter"></span>
+            </div>
+
+            <div class="plus">
+                <button class="action-button" onclick="clickPlus('{{item.id}}', '{{meal_id}}')">+</button>
+            </div>
+        </div>
+    </div>
+</div>

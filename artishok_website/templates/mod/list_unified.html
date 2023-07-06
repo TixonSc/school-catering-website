@@ -1,0 +1,13 @@
+{% extends "mod/base_mod.html" %}
+
+{% block content %}
+<h1>{{ elements.0.opts.verbose_name_plural }}</h1>
+    <ul style="list-style: none; font-size: larger;">
+        {% for element in elements %}
+            <li><p onclick="window.location.href='{% url 'edit_{class_name}' pk=element.id %}'" style="cursor: pointer;">{{ element }}</p></li>
+        {% endfor %}
+    </ul>
+
+    <h2 onclick="window.location.href='{% url 'create_empty_{class_name}' %}'" style="cursor: pointer;">➕</h2>
+{% endblock %}
+

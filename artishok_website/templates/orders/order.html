@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Замовлення ({{ order.datetime }}){% endblock%}
+
+{% block content%}
+<div class="container">
+<div class="order-info">
+    <div class="title">
+        <h1 class="title">Замовлення</h1>
+        <h3 class="order-time">{{ order.datetime }}</h3>
+    </div>
+
+    <div class="info-order">
+        <div>
+           <span class="order-text">Cтатус:&nbsp;</span>{{ order.get_status_display }}
+        </div>
+        <div> <span class="order-text">Учень:&nbsp;</span> 
+            {{ order.pupil_id.first_name}}
+            {{ order.pupil_id.last_name}}
+        </div>
+        <div>
+           <span class="order-text">Клас:&nbsp;</span> {{ order.pupil_id.class_id.name}} 
+        </div>
+        <div>
+           <span class="order-text">Батьки:&nbsp;</span> {{ order.profile_id }}
+        </div>
+        <div>
+            <span class="order-text">Ціна:&nbsp;</span>{{ order.price }}грн.
+        </div>
+        <div>
+           <span class="order-text">Коментар до замовлення:&nbsp;</span>{{ order.comment }}
+        </div>
+    </div>
+</div>
+
+<div class="column">
+    <div class="grid">
+        {% for day in data.days %}
+        <div class="day">
+            <h2>
+            {{ day.date|date:"l" }}|{{ day.date }}
+            </h2>
+            {% for meal in day.meals %}
+            <div class="meal" data-meal-id="{{meal.meal.id}}">
+                {% for item in meal.items %}
+                {% include "orders/order_item_card.html" with item=item %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if order.status == 0%}
+<div class="cancel">
+    <a href="{% url 'cancel_order' order_id=order.id %}">
+        Скасувати замовлення
+    </a>
+</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+{% comment %} <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> {% endcomment %}
+{% comment %} <script>var cartId = {{ cart.id }}</script> {% endcomment %}
+{% comment %} <script src="{% static 'js/cart_item_card.js' %}"></script> {% endcomment %}
+{% endblock %}

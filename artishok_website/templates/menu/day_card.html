@@ -1,0 +1,22 @@
+<a class="card" href="{% url 'menu_day' cart_id=cart_id date=date%}">
+    <div class="card-data">
+        <div class="info">
+            <div class="name">
+                <h2>{{ date|date:"l" }}</h2>
+                <h3>{{ date }}</h3>
+            </div>
+            <div class="date"></div>
+            <div class="additional-info">
+                <h3>{{ info }}</h3>
+            </div>
+        </div>
+        <div class="list-meals">
+            {% for meal in meals %}
+            <div class="meal">
+                <h3>{{ meal.name }}</h3>
+                <h4>{{ meal.time }}</h4>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</a>

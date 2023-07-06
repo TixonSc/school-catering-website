@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Редагування профілю{% endblock %}
+
+{% block navigation_bar %}{% endblock %}
+
+{% block content%}
+    <body>
+        <form class="form" method="post" autocomplete="off">
+            {% csrf_token %}
+            <p>
+                <label class="label" for="id_first_name">Ім`я:</label>
+                <input class="input-text" type="text" name="first_name"  maxlength="64" required id="id_first_name">
+            </p>
+            <p>
+                <label class="label" for="id_last_name">Прізвище:</label>
+                <input class="input-text" type="text" name="last_name" maxlength="64" required id="id_last_name">
+            </p>
+            <p>
+                <label class="label" for="id_phone_number">Номер телефону:</label>
+                <input class="input-text" type="text" name="phone_number" required id="id_phone_number">
+            </p>
+            <button class="button" type="submit" name="edit_profile_button">Зберегти</button>
+        </form>
+    </body>
+{% endblock %}

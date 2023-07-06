@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Меню {{cart.pupil_id.first_name}}{% endblock%}
+
+{% block additional_nav_btn %}
+<li>
+    <a href="{% url 'cart' cart_id=cart.id %}">Кошик ({{cart.pupil_id.first_name}})</a>
+</li>
+{% endblock %}
+
+{% block content%}
+<div class="container">
+    <h1 class="title">
+        Меню {{ date|date:"l" }}
+    </h1>
+    <h3 class="day-menu">
+        {{ date }} {{ time }}
+    </h3>
+
+    <div class="column">
+        <div class="card-list card-list-column">
+            {% for menu in data %}
+            <div class="meal card-menu" data-meal-id="{{menu.meal.id}}">
+                <div class="card-data">
+                    <input class="input-menu" type="checkbox" id="menu-check-{{menu.meal.id}}">
+                    <label class="label-menu" for="menu-check-{{menu.meal.id}}">
+                        <h2 class="menu-title">
+                            {{ menu.meal.name }}
+                        </h2>
+                        <svg class="icon-menu" width="20" height="15">
+                            <use xlink:href="/static/images/symbol-defs.svg#icon-arrow">
+                            </use>
+                          </svg>
+                    </label>
+                    <div class="grid-menu">
+                        {% for item in menu.items %}
+                        {% include "menu/dish_card.html" with cart_id=cart.id item=item meal_id=menu.meal.id%}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="navigation_buttons">
+        <div class="row">
+            {% include "menu/navigation_buttons.html" with dates=dates cart_id=cart.id current_date=date %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>var cartId = {{ cart.id }}</script>
+<script src="{% static 'js/dish_card.js' %}"></script>
+{% endblock %}

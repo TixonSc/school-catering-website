@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Кошик ({{cart.pupil_id.first_name}}){% endblock%}
+
+{% block additional_nav_btn %}
+<li>
+    <a href="{% url 'menu_days' cart_id=cart.id %}">Меню ({{cart.pupil_id.first_name}})</a>
+</li>
+{% endblock %}
+
+{% block content%}
+<div class="container">
+    <h1 class="title"> 
+        Кошик 
+    </h1>
+</div>
+
+
+<div class="column">
+    <div class="grid">
+        {% for day in data.days %}
+            <div class="day">
+                <a href="{% url 'menu_day' cart_id=cart.id date=day.date %}">
+                    <h2>
+                        {{ day.date|date:"l" }}
+                    </h2>
+                </a>
+                {% for meal in day.meals %}
+                    <div class="meal" data-meal-id="{{meal.meal.id}}">
+                        {% for item in meal.items %}
+                            {% include "cart/cart_item_card.html" with cart_id=cart.id item=item.menu_item_id meal_id=meal.meal.id%}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="comment">
+    <div class="container">
+        <form class="cart-form"  method="post" autocomplete="off">
+            {% csrf_token %}
+            <p>
+                <label class="cart-label" for="id_comment">Коментар до замовлення</label> 
+                <textarea class="cart-textarea"  rows="10" cols="50" type="text" name="comment" maxlength="512" id="id_comment"></textarea>  
+            </p>
+            <button class="cart-btn" type="submit" name="confirm_button">Зберегти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>var cartId = {{ cart.id }}</script>
+    <script src="{% static 'js/cart_item_card.js' %}"></script>
+{% endblock %}

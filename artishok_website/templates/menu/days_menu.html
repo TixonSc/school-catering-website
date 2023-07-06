@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Меню {{cart.pupil_id.first_name}}{% endblock%}
+
+{% block additional_nav_btn %}
+<li>
+    <a href="{% url 'cart' cart_id=cart.id %}">Кошик ({{cart.pupil_id.first_name}})</a>
+</li>
+{% endblock %}
+
+{% block content%}
+<div class="container">
+    <h1 class="title">
+        Меню
+    </h1>
+
+    <div class="card-list card-list-column">
+        {% for card in cards %}
+        {% include "menu/day_card.html" with date=card.date meals=card.meals cart_id=cart.id%}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Модерація</title>
+    <style>
+		{% block styles %}
+			.sidebar {
+				float: left;
+				width: 15%;
+				height: 100%
+				background-color: #f1f1f1;
+				padding: 20px;
+				margin-right: 20px;
+			}
+			.content {
+				float: left;
+				width: 85%;
+				padding: 20px;
+			}
+		{% endblock %}
+	</style>
+    {% block script %}{% endblock script %}
+</head>
+<body>
+	<div id="sidebar">
+        {% include "mod/sidebar_block.html" %}
+	</div>
+ 	<div id="content">
+		{% block content %}
+		<h1>ARTISHOK</h1>
+		{% endblock %}
+	</div>
+</body>

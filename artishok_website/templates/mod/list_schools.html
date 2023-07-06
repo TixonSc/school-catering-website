@@ -1,0 +1,39 @@
+{% extends "mod/base_mod.html" %}
+{% block styles %}
+  {{ block.super }}
+{% endblock %}
+{% block content %}
+<h1>Школи</h1>
+  <ul>
+    {% for school_item in schools %}
+        <br>
+      <li>
+        <h2 onclick="window.location.href='{% url "view_school" school_id=school_item.school_id.id %}'" style="cursor: pointer;">{{ school_item.school_id }}</h2>
+        <h4>Класи</h4>
+        <ul>
+          {% for class in school_item.classes %}
+            <li>{{ class.name }}</li>
+          {% endfor %}
+        <ul>
+        <h4>Керівники</h4>
+        <ul>
+          {% for operator in school_item.operators %}
+            <li>
+              {{ operator }}
+              <a href="{% url 'remove_privileges' profile_id=operator.id %}">
+                <button>Видалити</button>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <form method="POST" action="{% url 'add_operator' %}">
+            {% csrf_token %}
+            <input type="hidden" name="school_id" value="{{ school_item.school_id.id }}">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <button type="submit">Додати керівника школи</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

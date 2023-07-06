@@ -1,0 +1,39 @@
+<div class="card">
+    <div class="card-data">
+        <div class="info">
+            <div class="name">
+                <h2>
+                    {{ child.pupil_id.first_name }} {{ child.pupil_id.last_name }}
+                </h2>
+            </div>
+
+            <div class="school">
+                <h3>
+                    <p><strong>Школа:</strong> <span class="info-text">{{ child.pupil_id.class_id.school_id.name }}</span></p>
+                    <p><strong>Клас:</strong> <span class="info-text">{{ child.pupil_id.class_id.name }}</span> </p>
+                </h3>
+            </div>
+
+            <div class="info">
+                <h3>
+                    <p><strong>Інформація: </strong> <span class="info-text">{{ child.get_verified_display }}</span></p>
+                </h3>
+            </div>
+        </div>
+
+        <div class="list_buttons">
+            {% if child.verified == 1%}
+            <a href="{% url 'menu_days' cart_id=cart.id %}" class="a_btn">
+                Меню
+            </a>
+            <a href="{% url 'cart' cart_id=cart.id %}" class="a_btn">
+                Кошик
+            </a>
+            {% endif %}
+        </div>
+            <form method="POST" action="{% url 'delete_child' child_id=child.id %}">
+                {% csrf_token %}
+                <button type="submit" class="button button-remove del_btn">Видалити</button>
+            </form>
+    </div>
+</div>

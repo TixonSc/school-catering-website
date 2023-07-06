@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Додавання дитини{% endblock %}
+  
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{% static 'js/child_request.js' %}"></script>
+{% endblock %}
+
+{% block content%}
+<form class="form" method="POST" autocomplete="off">
+
+    <div>
+      <label class="label" for="school-select">Виберіть школу:</label>
+      <select class="select" id="school-select" name="school-select">
+        <option value="" selected disabled>Оберіть школу</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="label" for="class-select">Виберіть клас:</label>
+      <select class="select" id="class-select" name="class-select">
+        <option value="" selected disabled>Оберіть клас</option>
+      </select>
+    </div>
+
+    <div>
+      {% csrf_token %}
+        <div>
+            <label class="label" for="id_first_name">Ім'я:</label>
+            <input class="input-text" type="text" name="first_name" maxlength="64" required id="id_first_name">
+        </div>
+        <div>
+            <label class="label" for="id_last_name">Прізвище:</label>
+            <input class="input-text" type="text" name="last_name" maxlength="64" required id="id_last_name">
+        </div>
+
+        <div>
+            <label class="label" for="id_birth_date">Дата народження:</label>
+            <input class="input-text" type="text" name="birth_date" required id="id_birth_date">
+        </div>
+      <button class="button" name="confirm_button">Підтвердити</button>
+    </div>
+
+  </form>
+{% endblock %}

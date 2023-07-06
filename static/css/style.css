@@ -1,0 +1,51 @@
+/*.container {*/
+/*    display: flex;*/
+/*    flex-wrap: wrap;*/
+/*    flex-direction: row;*/
+/*}*/
+
+/*.column {*/
+/*    flex: 1;*/
+/*}*/
+
+/*@media screen and (max-width: 768px) {*/
+/*.container {*/
+/*    flex-direction: column;*/
+/*}*/
+/*}*/
+
+/*#toggle-checkbox:checked ~ #select-dish {*/
+/*    display: none;*/
+/*}*/
+
+/*#select-dish {*/
+/*    display: block;*/
+/*}*/
+
+/*#select-product {*/
+/*    display: none;*/
+/*}*/
+
+/*#toggle-checkbox:checked ~ #select-product {*/
+/*    display: block;*/
+/*}*/
+
+/*!* CSS for the hidden element *!*/
+/*#ingredient-form {*/
+/*    display: none; !* Hide the element by default *!*/
+/*}*/
+
+/*!* CSS to show the element when button is clicked *!*/
+/*#ingredient-form.show {*/
+/*    display: block; !* Show the element when "show" class is added *!*/
+/*}*/
+
+/*!* CSS for the hidden element *!*/
+/*#menu_item-form {*/
+/*    display: none; !* Hide the element by default *!*/
+/*}*/
+
+/*!* CSS to show the element when button is clicked *!*/
+/*#menu_item-form.show {*/
+/*    display: block; !* Show the element when "show" class is added *!*/
+/*}*/

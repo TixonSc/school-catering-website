@@ -1,0 +1,13 @@
+{% extends "mod/base_mod.html" %}
+
+{% block content %}
+<h1>Меню</h1>
+    <ul style="list-style: none; font-size: larger;">
+        {% for menu in menus %}
+            <li><p onclick="window.location.href='{% url 'edit_menu' menu_id=menu.id %}'" style="cursor: pointer;">{{ menu }}</p></li>
+        {% endfor %}
+    </ul>
+
+    <h2 onclick="window.location.href='{% url 'create_empty_menu' %}'" style="cursor: pointer;">➕</h2>
+{% endblock %}
+

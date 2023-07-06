@@ -1,0 +1,22 @@
+{% extends "mod/base_mod.html" %}
+
+{% block content %}
+<h1>Страви</h1>
+    <ul style="list-style: none; font-size: larger;">
+        {% for dish in dishes %}
+            <li style="display: flex; justify-content: flex-start">
+                <p onclick="window.location.href='{% url 'edit_dish' dish_id=dish.id %}'" style="cursor: pointer;">
+                    {{ dish }}
+                </p>
+                <form method="POST" action="{% url 'list_dishes' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="dish_id" value="{{ dish.id }}">
+                    <button type="submit" name="action" value="archive">    ╳    </button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2 onclick="window.location.href='{% url 'create_empty_dish' %}'" style="cursor: pointer;">➕</h2>
+{% endblock %}
+

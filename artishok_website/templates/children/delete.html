@@ -1,0 +1,4 @@
+<form method="POST" action="{% url 'delete_child' child_id %}">
+    {% csrf_token %}
+    <button type="submit">Видалити дитину</button>
+</form>
