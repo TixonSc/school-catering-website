@@ -18,10 +18,6 @@ from .decorators import *
 import datetime
 import pandas
 
-from faker import Faker, providers
-fake = Faker()
-
-
 # ----------------------------------------------------------------
 #   ADDITION functions
 # ----------------------------------------------------------------
@@ -698,6 +694,20 @@ def children2dict(raw: list, l: list = []):
     return l
 
 
+@role_required(1, 4) # MB: dont need
+def create_empty_product(request):
+    new_product = Product.objects.create(
+        name='Новий продукт',
+        is_meat=False,
+        is_fish=False,
+        is_gluten=False,
+        is_lactose=False,
+        is_bob=False,
+        is_glucose=False
+    )
+    return redirect('edit_product', product_id=new_product.id)
+
+
 def purchase_week_dates():
     COUNT_OF_DAYS = 7
     start_next_week = get_start_available_date()
@@ -711,16 +721,6 @@ def order_items_by_dates(dates: list):
     meals = Meal.objects.filter(date__in=dates)
     order_items = OrderItem.objects.filter(meal_id__in=meals)
     return order_items
-
-# MB: delete
-@role_required(4)
-def table_view(request, table_html):
-    profile = get_current_profile(request)
-    context = {
-        'profile': profile,
-        'table': table_html,
-    }
-    return render(request, 'mod/tables/table_view.html', context)
   
 
 def products_from_dishes(dishes: list|Dish): # recursive function for products from dish list
@@ -859,84 +859,7 @@ def table_cooking_formation(data):
         return pandas.DataFrame(table_by_order_items(order_items))
 
 
-
-    tab_dict = {}
-    if school_id == "all": # all schools
-        schools = School.objects.all()
-        for school in schools:
-            classes = Class.objects.filter(school_id=school)
-            pupils = Pupil.objects.filter(class_id__in=classes)
-            meals = Meal.objects.filter(date=date, school_id=school)
-            orders = Order.objects.filter(
-                status=0, 
-                datetime__lt=date,
-                pupil_id__in=pupils
-            )
-            order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-            if order_items.count() > 0:
-                tab_dict.update(
-                    table_dict_by_(school, order_items)
-                )
-
-        table = pandas.DataFrame(
-            tab_dict
-        )
-        return table # every school ----
-    else: # concrete school
-        school = School.objects.get(id=school_id)
-
-        if class_id == "all": # all classes in school
-            meals = Meal.objects.filter(date=date, school_id=school)
-            classes = Class.objects.filter(school_id=school)
-
-            print(f"ALCLS __ {school}, {meals}, {classes}")
-
-            for clss in classes:
-                pupils = Pupil.objects.filter(class_id=clss)
-                orders = Order.objects.filter(
-                    status=0, 
-                    datetime__lt=date,
-                    pupil_id__in=pupils
-                )
-                order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-                if order_items.count() > 0:
-                    tab_dict.update(
-                        table_dict_by_(clss, order_items)
-                    )
-                      
-            table = pandas.DataFrame(
-                tab_dict
-            )
-            return table # every class in school ----
-        else: # concrete class
-            meals = Meal.objects.filter(date=date, school_id=school)
-            pupils = Pupil.objects.filter(class_id=class_id)
-            for pupil in pupils:
-                orders = Order.objects.filter(
-                    status=0, 
-                    datetime__lt=date,
-                    pupil_id=pupil
-                )
-                order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-                if order_items.count() > 0:
-                    tab_dict.update(
-                        table_dict_by_(pupil, order_items)
-                    )
-                      
-            table = pandas.DataFrame(
-                tab_dict
-            )
-            return table # every pupil in school and class ----
-
-
-# "prepare": { # detail
-#     'Заклад та користувач': (),
-#     'Прийом їжі': (),
-#     'Страва': (),	
-#     'Кількість порцій': (),
-#     # Школа
-#     # Клас
-# }
+# prepare
 def table_prepare_formation(data):
     detail = data['detail']
     school = data['school']
@@ -1178,21 +1101,6 @@ def edit_product(request, product_id):
     return render(request, 'mod/edit_product.html', {'form': form, 'sb': make_sidebar(request.user.profile)})
 
 
-@role_required(1, 4)
-def create_empty_product(request):
-    new_product = Product.objects.create(
-        name='Новий продукт',
-        is_meat=False,
-        is_fish=False,
-        is_gluten=False,
-        is_lactose=False,
-        is_bob=False,
-        is_glucose=False
-    )
-    return redirect('edit_product', product_id=new_product.id)
-# страви, продукти, школи, меню - просто ліст
-
-
 # MEALS EDIT
 @csrf_protect
 @role_required(1, 4)
@@ -1254,7 +1162,7 @@ def gen_classes(school: School):
 
 @csrf_protect
 @role_required(1, 4)
-def mod_list_schools(request):  # TODO
+def mod_list_schools(request):  # TODO 
     # GENERATE DICT FOR SCHOOL: CLASSES AND OPERATORS
     school_objects = School.objects.all()
     schools = []
@@ -1328,16 +1236,16 @@ def mod_remove_privileges(request, profile_id: int):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-def mod_list_pupils(request):  # TODO
+def mod_list_pupils(request):  # TODO mix with mod_request()
     pass
-
 
 
 @profile_required
 @role_required(4)
 def mod_creating_table(request):
+    profile = get_current_profile(request)
     context = {
+        'profile': profile,
         'sb': make_sidebar(request.user.profile),
-
     }
     return render(request, 'mod/tables/creating_table.html', context)
