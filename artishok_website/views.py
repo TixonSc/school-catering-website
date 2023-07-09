@@ -618,7 +618,6 @@ def make_sidebar(p: Profile) -> dict:
         return {}
     if p.role == 1 or p.role == 4:  # модератору та адміну більшість пунктів меню
         menu_items = {
-            'list_orders': 'Замовлення',
             'list_meals': 'Прийоми їжі',
             'list_dishes': 'Страви',
             'list_menus': 'Меню',
@@ -630,7 +629,7 @@ def make_sidebar(p: Profile) -> dict:
             School, pk=p.school_id.id)
     if p.role == 4:  # адміну пункт андміна
         menu_items['admin:index'] = 'Панель адміністратора'
-        menu_items['create_table'] = 'Талбиці замовлень'
+        menu_items['table_orders'] = 'Замовлення'
 
 
     # menu_items = {
@@ -937,11 +936,15 @@ def mod_list_dishes(request):
     return render(request, 'mod/list_dishes.html', {'sb': make_sidebar(request.user.profile), 'dishes': dishes})
 
 
-@role_required(1, 4)
-def mod_list_orders(request):
-    orders = Order.objects.all()
-    return render(request, 'mod/list_orders.html', {'sb': make_sidebar(request.user.profile), 'orders': orders})
-
+@profile_required
+@role_required(4)
+def mod_table_orders(request):
+    profile = get_current_profile(request)
+    context = {
+        'profile': profile,
+        'sb': make_sidebar(request.user.profile),
+    }
+    return render(request, 'mod/tables/table_orders.html', context)
 
 @role_required(1, 4)
 def mod_list_menus(request):
@@ -1238,14 +1241,3 @@ def mod_remove_privileges(request, profile_id: int):
 
 def mod_list_pupils(request):  # TODO mix with mod_request()
     pass
-
-
-@profile_required
-@role_required(4)
-def mod_creating_table(request):
-    profile = get_current_profile(request)
-    context = {
-        'profile': profile,
-        'sb': make_sidebar(request.user.profile),
-    }
-    return render(request, 'mod/tables/creating_table.html', context)

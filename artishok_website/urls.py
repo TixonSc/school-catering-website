@@ -45,7 +45,10 @@ urlpatterns = [
     path('mod/meals/', views.mod_list_meals, name='list_meals'),
     path('mod/meals/<int:year>-<int:month>-<int:day>/', views.mod_list_meals, name='list_meals'),
     path('mod/dishes/', views.mod_list_dishes, name='list_dishes'),
-    path('mod/orders/', views.mod_list_orders, name='list_orders'),
+
+    path('get/table/', views.retrieve_table, name='get_table'), 
+    path('mod/table-orders/', views.mod_table_orders, name='table_orders'),
+
     path('mod/menus/', views.mod_list_menus, name='list_menus'),
     path('mod/products/', views.mod_list_products, name='list_products'),
     path('mod/schools/', views.mod_list_schools, name='list_schools'),
@@ -65,12 +68,6 @@ urlpatterns = [
 
     path('mod/product/<int:product_id>/change/', views.edit_product, name='edit_product'),
     path('mod/product/create/', views.create_empty_product, name='create_empty_product'),
-    
-    # txn code
-    path('table/', views.table_view, name='table'),
-    path('get/table/', views.retrieve_table, name='get_table'),
-    path('mod/tables/create/', views.mod_creating_table, name='create_table'),
-
 
     path('admin/', admin.site.urls, name='admin'),
 ]
