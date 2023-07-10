@@ -735,7 +735,7 @@ def products_from_dishes(dishes: list|Dish): # recursive function for products f
     return products
 
 
-# purchase - table
+# table PURCHASE
 def table_purchase_formation():
     dates_week = purchase_week_dates()
     waiting_orders = Order.objects.filter(status=0, datetime__lt=min(dates_week))
@@ -752,8 +752,8 @@ def table_purchase_formation():
         index=products.keys()
     )
     return table
-    
-def table_by_order_items(order_items: OrderItem.objects.__class__):
+
+def DataFrame_by_order_items(order_items: OrderItem.objects.__class__):
     t_dict = {
         'Школа': [],
         'Клас': [],
@@ -775,52 +775,14 @@ def table_by_order_items(order_items: OrderItem.objects.__class__):
         t_dict['Страва'].append(order_item.menu_item_id.dish_id.name)
         t_dict['Порцій'].append(order_item.count_portion)
         t_dict['Вага порції'].append(order_item.menu_item_id.weight)
-    return t_dict
+    return pandas.DataFrame(t_dict)
 
-# cooking - table
-def table_cooking_formation(data):
-    date = data['date']
+
+def order_items_by_data(data:dict, status) -> OrderItem.objects.__class__:
+    date = data['date'] or datetime.datetime.today().date()
     school_id = data['school']
     class_id = data['class']
-    status = 0
-
-    def table_dict_by_(
-            obj: School|Class|Pupil, 
-            order_items: OrderItem.objects.__class__
-        ):
-        print(f"ARGS::{obj}, {list(order_items)}")
-
-        if order_items.count() == 0:
-            print(f"table_dict_by_:ERROR\n0 order items\n{order_items}")
-            return {}
-
-        table_dict = {
-            obj.__class__._meta.verbose_name: [],
-            'Прийом їжі': [],
-            'Час': [],
-            'Страва': [],
-            'Порцій': [],
-            'Вага порції': [],
-        }
-        menu_items_ids = order_items.values_list('menu_item_id', flat=True).distinct()
-
-        for menu_item_id in menu_items_ids:
-            order_items_by_menu_item = order_items.filter(menu_item_id=menu_item_id)
-            order_item = order_items_by_menu_item.first()
-            portions = sum(order_items_by_menu_item.aggregate(Sum("count_portion")).values())
-            menu_item = order_item.menu_item_id
-            meal = order_item.meal_id
-            name = menu_item.dish_id.name
-            
-            table_dict[obj.__class__._meta.verbose_name].append(f"{obj.info()}")
-            table_dict['Прийом їжі'].append(meal.name)
-            table_dict['Час'].append(meal.time)
-            table_dict['Страва'].append(name)
-            table_dict['Порцій'].append(portions)
-            table_dict['Вага порції'].append(menu_item.weight)
-        print(f"TD::{table_dict}")
-        return table_dict
-
+    
     if school_id == "all":
         schools = School.objects.all()
         classes = Class.objects.filter(school_id__in=schools)
@@ -832,7 +794,7 @@ def table_cooking_formation(data):
             pupil_id__in=pupils
         )
         order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-        return pandas.DataFrame(table_by_order_items(order_items))
+        return order_items
 
     elif class_id == "all":
         classes = Class.objects.filter(school_id=school_id)
@@ -844,7 +806,7 @@ def table_cooking_formation(data):
             pupil_id__in=pupils
         )
         order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-        return pandas.DataFrame(table_by_order_items(order_items))
+        return order_items
 
     else:
         pupils = Pupil.objects.filter(class_id=class_id)
@@ -855,14 +817,21 @@ def table_cooking_formation(data):
             pupil_id__in=pupils
         )
         order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
-        return pandas.DataFrame(table_by_order_items(order_items))
+        return order_items
 
 
-# prepare
+# table COOKING
+def table_cooking_formation(data):
+    
+    order_items = order_items_by_data(data, 0)
+    return DataFrame_by_order_items(order_items)
+
+
+# table PREPARE
 def table_prepare_formation(data):
-    detail = data['detail']
-    school = data['school']
-    clss = data['class']
+
+    order_items = order_items_by_data(data, 1)
+    return DataFrame_by_order_items(order_items)
 
 
 def table_by_request(data):
@@ -875,9 +844,10 @@ def table_by_request(data):
         case 'cooking':
             table = table_cooking_formation(data)
         case 'prepare':
+            data['date'] = datetime.datetime.today().date()
             table = table_prepare_formation(data)
         case _:
-            print(f"\nError: non correct request template name {template_name}")
+            print(f"\ERROR: non correct request template name {template_name}")
     print(f"\n--Table--:\n{table}")
     return table
 
