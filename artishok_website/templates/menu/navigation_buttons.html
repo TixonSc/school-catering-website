@@ -1,9 +1,9 @@
 {% for date in dates%}
-    {% if date != current_date %}
-        <a href="{% url 'menu_day' cart_id=cart_id date=date%}">
-            <div class="item">
-                {{ date|date:"l" }}
-            </div>
-        </a>
-    {% endif %}
+{% if date != selected_date %}
+<a href="{% url 'menu_day' date=date%}">
+    <div class="item">
+        {{ date|date:"l" }}
+    </div>
+</a>
+{% endif %}
 {% endfor %}

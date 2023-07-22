@@ -9,7 +9,7 @@ async function getSchoolsAndClasses() {
         console.log("data:schools", JSON.parse(data.schools));
         console.log("data:classes", JSON.parse(data.classes));
         const data_dict = {
-            'schools': JSON.parse(data.schools),
+            // 'schools': JSON.parse(data.schools),
             'classes': JSON.parse(data.classes),
         };
         console.log("data_dict:", data_dict);

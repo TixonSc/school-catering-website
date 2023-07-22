@@ -3,7 +3,7 @@
     <div class="sidebar">
         <h2 onclick="window.location.href='{% url 'mod_index' %}'" style="cursor: pointer;">Головне меню</h2>
         <p onclick="window.location.href='{% url 'applications' %}'" style="cursor: pointer;">Заявки на створення</p>
-        {% for key, value in sb.items %}
+        {% for key, value in sidebar.items %}
             {% if key == 'view_school' %}
                 <p onclick="window.location.href='{% url key school_id=value.id %}'" style="cursor: pointer;">{{ value }}</p>
             {% else %}

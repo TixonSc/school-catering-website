@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Модерація</title>
+	<title>{% block title %}Default title{% endblock title %}</title>
     <style>
 		{% block styles %}
 			.sidebar {
@@ -27,7 +27,6 @@
 	</div>
  	<div id="content">
 		{% block content %}
-		<h1>ARTISHOK</h1>
 		{% endblock %}
 	</div>
 </body>

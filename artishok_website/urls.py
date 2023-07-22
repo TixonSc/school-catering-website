@@ -24,16 +24,17 @@ urlpatterns = [
     path('children/delete/<int:child_id>/', views.delete_child, name='delete_child'),
     
 
-    path('menu/<int:cart_id>/', views.menu_days_view, name='menu_days'),
-    path('menu/<int:cart_id>/day/<str:date>/', views.menu_day_view, name='menu_day'),
-    path('count_portions/', views.count_portions, name='count_portions'),
-    path('cart/<int:cart_id>/', views.cart_view, name='cart'), #корзина конкретної дитини    
+    path('child/<int:child_id>/menus/', views.available_menus_view, name='menus'),
+    path('child/<int:child_id>/menu-date/<str:date>/', views.menu_date_view, name='menu_date'), # TODO: day to date
+    path('change-count/', views.change_count, name='change_count'),
+    path('child/<int:child_id>/cart/', views.cart_view, name='cart'), #корзина конкретної дитини    
     # path('cart/<int:cart_id>/confirm/', views.confirm_cart, name='confirm_cart'), #підтвердження замовлення кошика
 
 
     path('get/orders/', views.retrieve_orders_json, name='get_orders'),
+    # TODO: child orders - in future 
+    # path('child/<int:child_id>/orders/', views.orders_view, name='orders'), #всі замовлення на конкретну дитину
     path('orders/', views.orders_view, name='orders'), #всі замовлення по всім дітям користувача які були
-    path('orders/child/<int:pupil_id>/', views.orders_view, name='orders'), #всі замовлення на конкретну дитину
     path('order/<int:order_id>/', views.order_view, name='order'), #конкретне замовлення на конкретну дитину
     path('order/<int:order_id>/cancel/', views.cancel_order, name='cancel_order'), #конкретне замовлення на конкретну дитину
     
@@ -50,7 +51,9 @@ urlpatterns = [
     path('mod/table-orders/', views.mod_table_orders, name='table_orders'),
 
     path('mod/menus/', views.mod_list_menus, name='list_menus'),
+
     path('mod/products/', views.mod_list_products, name='list_products'),
+    
     path('mod/schools/', views.mod_list_schools, name='list_schools'),
     path('mod/schools/<int:school_id>/', views.mod_view_school, name='view_school'),
     # path('mod/schools/<int:school_id>/classes/', views.mod_list_classes, name='list_classes'),

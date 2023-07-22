@@ -55,125 +55,121 @@ def get_start_available_date():
     return start_next_week_date
 
 
-def carts_deleteORcreate_by_children(request):
-    children = Child.objects.filter(profile_id=get_current_profile(request))
-    to_del_cart = children.filter(verified__in=[0, 2])
-    to_add_cart = children.filter(verified=1)
-    for child in to_del_cart:
-        Cart.objects.filter(pupil_id=child.pupil_id.id).delete()
-    for child in to_add_cart:
-        Cart.objects.create(pupil_id=child.pupil_id.id).save()
-
-
-def get_cart_by_child(child):
-    return Cart.objects.get(pupil_id=child.pupil_id.id)
+def get_cart_items_by_child(child):
+    return Order.objects.filter(
+        pupil_id=child.pupil_id,
+        profile_id=child.parent_id
+    )
 
 
 @api_view(['POST'])
 @profile_required
-def count_portions(request):
+def change_count(request):
     menu_item_id = request.POST['item_id']
-    cart_id = request.POST['cart_id']
     meal_id = request.POST['meal_id']
+    pupil_id = request.POST['pupil_id']
+    profile = get_current_profile(request)
     count = int(0)
 
-    try:
-        cart = Cart.objects.get(id=cart_id)
-        menu_item = MenuItem.objects.get(id=menu_item_id)
-        meal = Meal.objects.get(id=meal_id)
-        cart_item = CartItem.objects.filter(
-            menu_item_id=menu_item, cart_id=cart, meal_id=meal
-        ).first()
+    if 'new_count' in request.POST:
+        new_count = int(request.POST['new_count'])
 
-        if 'new_count' in request.POST:
-            new_count = int(request.POST['new_count'])
-
-            if new_count < 0:
-                data = { 'count': count }
-                return JsonResponse(data)
-            
-            if cart_item:
-                if new_count == 0:
-                    cart_item.delete()
-                else:
-                    cart_item.count_portion = new_count
-                    cart_item.save()
-                    count = cart_item.count_portion
-            else:
-                new_cart_item = CartItem.objects.create(
-                    menu_item_id=menu_item, cart_id=cart, meal_id=meal, count_portion=new_count
-                )
-                new_cart_item.save()
-                count = new_cart_item.count_portion
-
+        if new_count > 0:
+            order, flag = Order.objects.get_or_create(
+                profile_id=profile,
+                pupil_id=pupil_id,
+                menu_item_id=menu_item_id,
+                meal_id=meal_id,
+                status=Order.CART
+            )
+            order.count = new_count
+            order.save()
+            count = order.count
         else:
-            if cart_item:
-                count = cart_item.count_portion
-            else:
-                print(f"< error 404 >")
-                #error not found
-    except Exception as e:
-        print(f"ERROR {e}") #exception
+            try:
+                order = Order.objects.get(
+                    profile_id=profile,
+                    pupil_id=pupil_id,
+                    menu_item_id=menu_item_id,
+                    meal_id=meal_id,
+                    status=Order.CART
+                )
 
-    finally:
-        data = { 'count': count }
-        return JsonResponse(data)
+                order.delete()
+
+            #error not found
+            except Exception as e:
+                print(f"ERROR {e}") #exception
+
+            finally:
+                data = { 'count': count }
+
+    else:
+        try:
+            order = Order.objects.get(
+                profile_id=profile,
+                pupil_id=pupil_id,
+                menu_item_id=menu_item_id,
+                meal_id=meal_id,
+                status=Order.CART
+            )
+
+            count = order.count
+
+        #error not found
+        except Exception as e:
+            count = int(-1)
+            print(f"ERROR {e}") #exception
+
+        finally:
+            data = { 'count': count }
+    return JsonResponse(data)
 
 
 # @api_view(['POST'])
 @profile_required
-def order_formation(request, cart:Cart):
-    order = Order.objects.create(
-        pupil_id=cart.pupil_id,
-        profile_id=get_current_profile(request),
-        price=0,
-        datetime=datetime.datetime.now(),
-        status=0,
-        comment=cart.comment
-    )
-    price = 0
-
-    cart_items = CartItem.objects.filter(cart_id=cart)
-    for cart_item in list(cart_items):
-        order_item = OrderItem.objects.create(
-            order_id=order,
-            menu_item_id=cart_item.menu_item_id,
-            meal_id=cart_item.meal_id,
-            price=cart_item.menu_item_id.price,
-            count_portion=cart_item.count_portion
-        )
-        order_item.save()
-        price += order_item.price
+def reserving_orders(request, child_id):
+    profile = get_current_profile(request)
+    child = Child.objects.get(id=child_id)
     
-    order.price = price
-    order.save()
-    cart_items.delete()
-    cart.comment = ""
-    cart.save()
-    return order
+    orders_cart = Order.objects.filter(
+        pupil_id=child.pupil_id,
+        profile_id=profile,
+        status=Order.CART,
+    )
+
+    for order in list(orders_cart):
+        order.status = Order.RESERVED
+        order.price = order.menu_item_id.price
+        profile.debt -= order.price # TODO: defense
+        order.save()
+        profile.save()
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @profile_required
-def cancel_order(request):
-    order_id = request.POST('order_id')
-    order = Order.objects.get(id=order_id)
-
-    order.price # return to balance
-    # when balance will released TODO: return value of price to profile balance
-
-    order.status = 4
-    order.save()
+def cancel_order(request, order_id):
+    Order.objects.get(id=order_id).cancel()
     return redirect('orders')
 
 
-# @can_access_cart()
-def delete_overdue_cart_items(cart:Cart):
-    cart_items = CartItem.objects.filter(cart_id=cart)
+# TODO: some logs
+def delete_all_overdue_orders_in_carts():
+    orders = Order.objects.filter(status=Order.CART)
     next_availible_date = get_start_available_date()
-    for cart_item in cart_items:
-        if cart_item.meal_id.date < next_availible_date:
-            cart_item.delete()
+    for order in orders:
+        if order.meal_id.date < next_availible_date:
+            order.delete()
+
+def delete_all_overdue_orders_by_profile(profile: Profile):
+    orders = Order.objects.filter(
+        profile_id=profile,
+        status=Order.CART
+    )
+    next_availible_date = get_start_available_date()
+    for order in orders:
+        if order.meal_id.date < next_availible_date:
+            order.delete()
 
 # ----------------------------------------------------------------
 #   SERVER JSON RETRIVE FUNCS
@@ -262,7 +258,7 @@ def logout_view(request):
 @login_required
 def create_profile_view(request):
     current_user = get_current_user(request)
-    new_profile = Profile(user=current_user, role=0)
+    new_profile = Profile(user=current_user)
     form = ProfileForm(instance=new_profile)
 
     if request.method == 'POST':
@@ -321,8 +317,8 @@ def edit_profile_view(request):
 def children_view(request):
     profile = get_current_profile(request)
     children = Child.objects.filter(
-        parent_id=profile,
-        verified__in=[0, 1]
+        parent_id=profile.id,
+        verified__in=[Child.REQUEST, Child.CONFIRMED]
     )
 
     if not children:
@@ -330,9 +326,9 @@ def children_view(request):
 
     cards = list()
     for child in children:
-        if child.verified == 1:
-            cards.append({'child': child, 'cart': get_cart_by_child(child)})
-        if child.verified == 0:
+        if child.verified == Child.REQUEST:
+            cards.append({'child': child, 'cart': get_cart_items_by_child(child)})
+        if child.verified == Child.CONFIRMED:
             cards.append({'child': child, 'cart': None})
 
     context = {
@@ -342,14 +338,12 @@ def children_view(request):
     return render(request, 'children/view.html', context)
 
 
+# TODO: rework this - will optimized and shortest
 # Add
 @profile_required
 def add_child_view(request):
     profile = get_current_profile(request)
-    schools = School.objects.all()
-    classes = Class.objects.all()
-    schools_json = serializers.serialize('json', schools)
-    classes_json = serializers.serialize('json', classes)
+    classes = Class.objects.filter(school_id=profile.school_id)
 
     if request.method == 'POST':
         if 'confirm_button' in request.POST:
@@ -375,7 +369,7 @@ def add_child_view(request):
                         child = Child.objects.create(
                             parent_id=profile,
                             pupil_id=existing_pupil,
-                            verified=0
+                            verified=Child.REQUEST
                         )
                         child.save()
                 else:
@@ -391,7 +385,7 @@ def add_child_view(request):
                     child = Child.objects.create(
                         parent_id=profile,
                         pupil_id=pupil,
-                        verified=0
+                        verified=Child.REQUEST
                     )
                     child.save()
                 return redirect('children')  # Redirect to a success page
@@ -401,8 +395,7 @@ def add_child_view(request):
     context = {
         'profile': profile,
         'form': form,
-        'schools_json': schools_json,
-        'classes_json': classes_json
+        'classes': classes
     }
     return render(request, 'children/child_request.html', context)
 
@@ -424,11 +417,9 @@ def delete_child(request, child_id):
 # ----------------------------------------------------------------
 
 # Menu-days
-@can_access_cart()
-def menu_days_view(request, cart_id):
+def available_menus_view(request, child_id):
     profile = get_current_profile(request)
-    cart = Cart.objects.get(id=cart_id)
-    school = cart.pupil_id.class_id.school_id
+    school = profile.school_id
     dates = available_days_to_order_for_school(school)
     meals = Meal.objects.filter(school_id=school, date__in=dates)
     cards = list()
@@ -445,23 +436,20 @@ def menu_days_view(request, cart_id):
 
     context = {
         'profile': profile,
-        'cart': cart,
         'cards': cards,
     }
     return render(request, 'menu/days_menu.html', context=context)
 
 
 # Menu-day
-@can_access_cart()
-def menu_day_view(request, cart_id, date):
+def menu_date_view(request, child_id, date):
     profile = get_current_profile(request)
-    cart = Cart.objects.get(id=cart_id)
-    school = cart.pupil_id.class_id.school_id
+    school = profile.school_id
     dates_of_menu = available_days_to_order_for_school(school)
     date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
     if not (date in dates_of_menu):
-        return redirect('menu_days', cart_id=cart.id)
+        return redirect('menus', child_id=child_id)
     
     meals = Meal.objects.filter(
         date=date,
@@ -479,7 +467,6 @@ def menu_day_view(request, cart_id, date):
 
     context = {
         'profile': profile,
-        'cart': cart,
         'data': data,
         'date': date,
         'dates': dates_of_menu,
@@ -488,13 +475,15 @@ def menu_day_view(request, cart_id, date):
 
 
 # Cart
-@can_access_cart()
-def cart_view(request, cart_id):
+def cart_view(request, child_id):
     profile = get_current_profile(request)
-    cart = get_object_or_404(Cart, pk=cart_id)
-    delete_overdue_cart_items(cart)
-    cart_items = CartItem.objects.filter(cart_id=cart)
-    meal_ids = cart_items.values_list('meal_id', flat=True)
+    delete_all_overdue_orders_by_profile(profile)
+    child = Child.objects.get(id=child_id)
+    cart = Order.objects.filter(
+        profile_id=profile,
+        pupil_id=child.pupil_id
+    )
+    meal_ids = cart.values_list('meal_id', flat=True)
     meal_ids = list(set(meal_ids))
     meals = Meal.objects.filter(id__in=meal_ids)
     dates = meals.values_list('date', flat=True)
@@ -509,29 +498,30 @@ def cart_view(request, cart_id):
                 [
                     {
                         'meal' : meal,
-                        'items': cart_items.filter(meal_id=meal)
+                        'items': cart.filter(meal_id=meal)
                     } for meal in day_meals
                 ]
             ),
         })
 
-    cart_form = CartForm(instance=cart)
+    orders_form = OrderForm(instance=order)
     if request.method == 'POST':
         if 'confirm_button' in request.POST:
-            cart_form = CartForm(request.POST, instance=cart)
-            if cart_form.is_valid():
-                cart_form.save()
-                comment = cart_form.data['comment']
-                cart.comment = comment
-                cart.save()
-                order_formation(request, cart)
+            for order in cart:
+                orders_form = OrderForm(request.POST, instance=order)
+                if orders_form.is_valid():
+                    orders_form.save()
+                    comment = orders_form.data['comment']
+                    order.comment = comment
+                    order.save()
+            reserving_orders(request)
             return redirect('orders')
 
     context = {
         'profile': profile,
         'cart': cart,
         'data': data,
-        'comment': cart_form,
+        'comment': orders_form,
     }
     return render(request, 'cart/cart.html', context)
 
@@ -564,7 +554,7 @@ def orders_view(request):
     return render(request, 'orders/orders.html', context)
 
 
-# Order
+# Order by date
 @profile_required
 def order_view(request, order_id):
     profile = get_current_profile(request)
@@ -576,7 +566,7 @@ def order_view(request, order_id):
     if not (pupil in pupils):
         return redirect('orders')
 
-    order_items = OrderItem.objects.filter(order_id=order)
+    order_items = Order.objects.filter()
     meal_ids = order_items.values_list('meal_id', flat=True)
     meal_ids = list(set(meal_ids))
     meals = Meal.objects.filter(id__in=meal_ids)
@@ -607,16 +597,20 @@ def order_view(request, order_id):
     return render(request, 'orders/order.html', context)
 
 
-# ----------------------------------------------------------------
-#                   MODERATOR VIEWS
-# ----------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------
+#
+#                    MODERATOR VIEWS
+#
+# --------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------
 
 
-def make_sidebar(p: Profile) -> dict:
+def sidebar_by_profile(p: Profile) -> dict:
     menu_items = {}
-    if p.role == 0 or p.role == 3:  # якщо звичайний користувач, або класний керівник - не завантажувати додаткові пункти меню
-        return {}
-    if p.role == 1 or p.role == 4:  # модератору та адміну більшість пунктів меню
+    if p.role == Profile.MODERATOR or p.role == Profile.ADMIN:  # модератору та адміну більшість пунктів меню
         menu_items = {
             'list_meals': 'Прийоми їжі',
             'list_dishes': 'Страви',
@@ -624,23 +618,13 @@ def make_sidebar(p: Profile) -> dict:
             'list_products': 'Продукти',
             'list_schools': 'Школи',
         }
-    if p.role == 2:  # керівнику школи додаємо їхню школу
+    if p.role == Profile.SHCOOL_MANAGER:  # керівнику школи додаємо їхню школу
         menu_items['view_school'] = get_object_or_404(
             School, pk=p.school_id.id)
-    if p.role == 4:  # адміну пункт андміна
-        menu_items['admin:index'] = 'Панель адміністратора'
+    if p.role == Profile.ADMIN:  # адміну пункт андміна
         menu_items['table_orders'] = 'Замовлення'
+        menu_items['admin:index'] = 'Панель адміністратора'
 
-
-    # menu_items = {
-    #     'list_orders': 'Замовлення',
-    #     'list_meals': 'Прийоми їжі',
-    #     'list_dishes': 'Страви',
-    #     'list_menus': 'Меню',
-    #     'list_products': 'Продукти',
-    #     'list_schools': 'Школи',
-    #     'admin': 'Панель адміністратора'
-    # }
     return menu_items
 
 
@@ -693,7 +677,7 @@ def children2dict(raw: list, l: list = []):
     return l
 
 
-@role_required(1, 4) # MB: dont need
+@role_required(Profile.ADMIN, Profile.MODERATOR) # MB: dont need
 def create_empty_product(request):
     new_product = Product.objects.create(
         name='Новий продукт',
@@ -718,7 +702,7 @@ def purchase_week_dates():
 
 def order_items_by_dates(dates: list):
     meals = Meal.objects.filter(date__in=dates)
-    order_items = OrderItem.objects.filter(meal_id__in=meals)
+    order_items = Order.objects.filter(meal_id__in=meals)
     return order_items
   
 
@@ -753,7 +737,7 @@ def table_purchase_formation():
     )
     return table
 
-def DataFrame_by_order_items(order_items: OrderItem.objects.__class__):
+def DataFrame_by_order_items(order_items: Order.objects.__class__):
     t_dict = {
         'Школа': [],
         'Клас': [],
@@ -778,7 +762,7 @@ def DataFrame_by_order_items(order_items: OrderItem.objects.__class__):
     return pandas.DataFrame(t_dict)
 
 
-def order_items_by_data(data:dict, status) -> OrderItem.objects.__class__:
+def order_items_by_data(data:dict, status) -> Order.objects.__class__:
     date = data['date'] or datetime.datetime.today().date()
     school_id = data['school']
     class_id = data['class']
@@ -793,7 +777,7 @@ def order_items_by_data(data:dict, status) -> OrderItem.objects.__class__:
             datetime__lt=date,
             pupil_id__in=pupils
         )
-        order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
+        order_items = Order.objects.filter(meal_id__in=meals, order_id__in=orders)
         return order_items
 
     elif class_id == "all":
@@ -805,7 +789,7 @@ def order_items_by_data(data:dict, status) -> OrderItem.objects.__class__:
             datetime__lt=date,
             pupil_id__in=pupils
         )
-        order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
+        order_items = Order.objects.filter(meal_id__in=meals, order_id__in=orders)
         return order_items
 
     else:
@@ -816,7 +800,7 @@ def order_items_by_data(data:dict, status) -> OrderItem.objects.__class__:
             datetime__lt=date,
             pupil_id__in=pupils
         )
-        order_items = OrderItem.objects.filter(meal_id__in=meals, order_id__in=orders)
+        order_items = Order.objects.filter(meal_id__in=meals, order_id__in=orders)
         return order_items
 
 
@@ -872,7 +856,7 @@ def table_to_csv_responce(table: pandas.DataFrame):
 
 
 @api_view(['POST'])
-@role_required(4)
+@role_required(Profile.ADMIN)
 def retrieve_table(request):
     table = table_by_request(request.data)
     if request.data['need'] == "html":
@@ -885,16 +869,25 @@ def retrieve_table(request):
 #           MOD VIEWS
 # ----------------------------------------------------------------
 
+def custom_render(request, file_path, additional_context: dict = {}):
+    profile = get_current_profile(request)
+    context = {
+        'profile': profile,
+        'sidebar': sidebar_by_profile(profile),
+    }
+    context.update(additional_context)
+    return render(request, file_path, context)
+
 # LISTS
 
 
 @profile_required
 def mod_index(request):
-    return render(request, 'mod/base_mod.html', {'sb': make_sidebar(request.user.profile)})
+    return custom_render(request, 'mod/base_mod.html')
 
 
 @csrf_protect
-@role_required(1, 4)
+@role_required(Profile.ADMIN, Profile.MODERATOR)
 def mod_list_dishes(request):
     if request.method == 'POST':
         dish_id = request.POST.get('dish_id')
@@ -903,90 +896,112 @@ def mod_list_dishes(request):
             dish.archive()
         return redirect('list_dishes')
     dishes = Dish.objects.all()
-    return render(request, 'mod/list_dishes.html', {'sb': make_sidebar(request.user.profile), 'dishes': dishes})
+    return custom_render(request, 'mod/list_dishes.html', {'dishes': dishes})
 
 
 @profile_required
-@role_required(4)
+@role_required(Profile.ADMIN)
 def mod_table_orders(request):
-    profile = get_current_profile(request)
-    context = {
-        'profile': profile,
-        'sb': make_sidebar(request.user.profile),
-    }
-    return render(request, 'mod/tables/table_orders.html', context)
+    return custom_render(request, 'mod/tables/table_orders.html')
 
-@role_required(1, 4)
+@role_required(Profile.ADMIN, Profile.MODERATOR)
 def mod_list_menus(request):
     menus = Menu.objects.all()
-    return render(request, 'mod/list_menus.html', {'sb': make_sidebar(request.user.profile), 'menus': menus})
+    return custom_render(request, 'mod/list_menus.html', {'menus': menus})
 
 
-@role_required(1, 4)
+@role_required(Profile.ADMIN, Profile.MODERATOR)
 def mod_list_products(request):
     products = Product.objects.all()
-    return render(request, 'mod/list_products.html', {'sb': make_sidebar(request.user.profile), 'products': products})
+    return custom_render(request, 'mod/list_products.html', {'products': products})
 
 
 # REGISTER CHILD REQUESTS
 @api_view(['POST'])
 @csrf_protect
-@role_required(2, 3, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.SHCOOL_MANAGER,
+    Profile.CLASS_MANAGER
+)
 def update_request(request, child_id, status):
+    if status not in [Child.VERIFIED]:
+        print(f"ERROR - Wrong status in request : {status}")
+        return redirect('applications')
+    
     child = Child.objects.get(pk=child_id)
 
-    if child.verified == 1 and Order.objects.filter(pupil_id=child.pupil_id, status=0).exists():
+    if child.verified == Child.CONFIRMED and Order.objects.filter(pupil_id=child.pupil_id, status=Order.ACCEPTED).exists():
         # TODO: error "this child have some orders in waiting"
         return redirect('applications')
     
     child.verified = status
     child.save()
-    if status == 1:
-        Cart.objects.create(pupil_id=child.pupil_id).save()
-        return redirect('applications')
-    if status == 0 or status == 2:
-        Cart.objects.filter(pupil_id=child.pupil_id).delete()
+    if status == Child.REQUEST or status == Child.REJECTED:
+        Order.objects.filter(
+            pupil_id=child.pupil_id,
+            status=Order.CART
+        ).delete()
         return redirect('applications')
     # TODO: error "status not normal"
     return redirect('applications')
     
 
-
+# TODO: full rework whith html
 @csrf_protect
-@role_required(1, 2, 3, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR,
+    Profile.SHCOOL_MANAGER,
+    Profile.CLASS_MANAGER
+)
 def applications_page(request):
     profile = get_current_profile(request)
-    if profile.role == 4 or profile.role == 1:  # mod or admin
-        pending = children2dict(Child.objects.filter(verified=0))
-        approved = children2dict(Child.objects.filter(verified=1))
-        refused = children2dict(Child.objects.filter(verified=2))
-    elif profile.role == 3:  # class mod
-        pending = children2dict(Child.objects.filter(
-            verified=0, pupil_id__class_id=profile.class_id))
-        approved = children2dict(Child.objects.filter(
-            verified=1, pupil_id__class_id=profile.class_id))
+    if profile.role == Profile.ADMIN or profile.role == Profile.MODERATOR:  # mod or admin
+        pending = children2dict(Child.objects.filter(verified=Child.REQUEST))
+        approved = children2dict(Child.objects.filter(verified=Child.CONFIRMED))
+        refused = children2dict(Child.objects.filter(verified=Child.REJECTED))
+    elif profile.role == Profile.CLASS_MANAGER:  # class mod
+        pending = children2dict(
+            Child.objects.filter(
+                verified=Child.REQUEST, 
+                pupil_id__class_id=profile.class_id
+            )
+        )
+        approved = children2dict(
+            Child.objects.filter(
+                verified=1,
+                pupil_id__class_id=profile.class_id
+            )
+        )
         refused = children2dict(Child.objects.filter(
             verified=2, pupil_id__class_id=profile.class_id))
-    elif profile.role == 2:  # school mod
+    elif profile.role == Profile.SHCOOL_MANAGER:  # school mod
         pending = children2dict(Child.objects.filter(
-            verified=0, pupil_id__class_id__school_id=profile.school_id))
+            verified=Child.REQUEST, pupil_id__class_id__school_id=profile.school_id))
         approved = children2dict(Child.objects.filter(
             verified=1, pupil_id__class_id__school_id=profile.school_id))
         refused = children2dict(Child.objects.filter(
             verified=2, pupil_id__class_id__school_id=profile.school_id))
     else:
         pending, approved, refused = [], [], []
-    return render(request, 'mod/applications_page.html', {'pending': pending, 'approved': approved, 'refused': refused, 'sb': make_sidebar(request.user.profile)})
+    context = {
+        'pending': pending,
+        'approved': approved,
+        'refused': refused
+    }
+    return custom_render(request, 'mod/applications_page.html', context)
 
 
 # DISH EDIT
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def edit_dish(request, dish_id: int):
     dish = get_object_or_404(Dish, pk=dish_id)
     ingredients = Ingredient.objects.filter(main_dish_id=dish_id)
-    # страшно вирубай! ахах, в тебе також є пиздець нечитаємий.
-    # Приємно думати що я не один рукопоп.
     products = Product.objects.exclude(id__in=[ing.product_id.id for ing in ingredients if ing.product_id]) if [
         ing.product_id for ing in ingredients] else Product.objects.all()
     dishes = Dish.objects.exclude(id__in=[
@@ -1003,17 +1018,31 @@ def edit_dish(request, dish_id: int):
             if ingredient_form.is_valid():
                 ingredient_form.save()
             return redirect('edit_dish', dish_id=dish_id)
-    return render(request, 'mod/edit_dish.html', {'dish_form': dish_form, 'dish': dish, 'ingredients': ingredients, 'products': products, 'dishes': dishes, 'sb': make_sidebar(request.user.profile)})
+    context = {
+        'page': "",
+        'dish_form': dish_form,
+        'dish': dish,
+        'ingredients': ingredients,
+        'products': products,
+        'dishes': dishes,
+    }
+    return custom_render(request, 'mod/edit_dish.html', context)
 
 
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def create_empty_dish(request):
     new_dish = Dish.objects.create(name='Нова Страва')
     return redirect('edit_dish', dish_id=new_dish.id)
 
 
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def delete_ingredient(request, pk, dish_id):
     ingredient = get_object_or_404(Ingredient, pk=pk)
     if request.method == 'POST':
@@ -1023,7 +1052,10 @@ def delete_ingredient(request, pk, dish_id):
 
 # MENU EDIT
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def edit_menu(request, menu_id: int):
     menu = get_object_or_404(Menu, pk=menu_id)
     menu_items = MenuItem.objects.filter(menu_id=menu_id)
@@ -1042,10 +1074,19 @@ def edit_menu(request, menu_id: int):
             if menu_item_form.is_valid():
                 menu_item_form.save()
             return redirect('edit_menu', menu_id=menu_id)
-    return render(request, 'mod/edit_menu.html', {'menu_form': menu_form, 'menu': menu, 'menu_items': menu_items, 'dishes': dishes, 'sb': make_sidebar(request.user.profile)})
+    context = {
+        'menu_form': menu_form,
+        'menu': menu,
+        'menu_items': menu_items,
+        'dishes': dishes,
+    }
+    return custom_render(request, 'mod/edit_menu.html', context)
 
 
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def create_empty_menu(request):
     new_menu = Menu.objects.create(name='Нове Меню')
     return redirect('edit_menu', menu_id=new_menu.id)
@@ -1061,7 +1102,10 @@ def delete_menu_item(request, pk, menu_id):
 
 # PRODUCT EDIT
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     if request.method == 'POST':
@@ -1071,12 +1115,16 @@ def edit_product(request, product_id):
             return redirect('list_products')
     else:
         form = ProductForm(instance=product)
-    return render(request, 'mod/edit_product.html', {'form': form, 'sb': make_sidebar(request.user.profile)})
+    context = {'form': form}
+    return custom_render(request, 'mod/edit_product.html', context)
 
 
 # MEALS EDIT
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def mod_list_meals(request, year: int = 0, month: int = 0, day: int = 0):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -1114,7 +1162,13 @@ def mod_list_meals(request, year: int = 0, month: int = 0, day: int = 0):
             } for weekday, da in week.items()]
         print(data)
         pass
-    return render(request, 'mod/list_meals.html', {'sb': make_sidebar(request.user.profile), 'meals': meals, 'menus': menus, 'dates': week, 'data': data})
+    context = {
+        'meals': meals,
+        'menus': menus,
+        'dates': week,
+        'data': data
+    }
+    return custom_render(request, 'mod/list_meals.html', context)
 
 
 # SCHOOLS EDIT
@@ -1124,7 +1178,10 @@ def gen_classes(school: School):
     for clss in class_objects:
         c = {}  # single class temp data
         c['class_id'] = clss
-        c['operators'] = list(Profile.objects.filter(class_id=clss, role=3))
+        c['operators'] = list(Profile.objects.filter(
+                class_id=clss, 
+                role=Profile.CLASS_MANAGER
+            ))
         c['pupils'] = {
             'approved': list(Pupil.objects.filter(class_id=clss, child__verified=1)),
             'pending': list(Pupil.objects.filter(class_id=clss, child__verified=0))
@@ -1134,7 +1191,10 @@ def gen_classes(school: School):
 
 
 @csrf_protect
-@role_required(1, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR
+)
 def mod_list_schools(request):  # TODO 
     # GENERATE DICT FOR SCHOOL: CLASSES AND OPERATORS
     school_objects = School.objects.all()
@@ -1142,50 +1202,56 @@ def mod_list_schools(request):  # TODO
     for school in school_objects:
         s = {}  # single school temp data
         s['school_id'] = school
-        s['operators'] = list(Profile.objects.filter(school_id=school, role=2))
+        s['operators'] = list(Profile.objects.filter(
+                school_id=school,
+                role=Profile.SHCOOL_MANAGER
+            ))
         s['classes'] = list(Class.objects.filter(school_id=school))
         schools.append(s)
     #
-    return render(request, 'mod/list_schools.html', {
-        'sb': make_sidebar(request.user.profile),
-        'schools': schools,
-    })
+    context = {'schools': schools}
+    return custom_render(request, 'mod/list_schools.html', context)
 
 
 @csrf_protect
-@role_required(1, 2, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR,
+    Profile.SHCOOL_MANAGER
+)
 def mod_view_school(request, school_id: int):
     try:
         school = School.objects.get(id=school_id)
     except School.DoesNotExist:
         return redirect('index')
-
-    return render(request, 'mod/view_school.html', {
-        'sb': make_sidebar(request.user.profile),
-        'classes': gen_classes(school),
-    })
+    context = {'classes': gen_classes(school)}
+    return custom_render(request, 'mod/view_school.html', context)
 
 
 @csrf_protect
-@role_required(1, 2, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR,
+    Profile.SHCOOL_MANAGER
+)
 def mod_add_operator(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         try:
             user = User.objects.get(email=email)
-            profile = Profile.objects.get(user=user)
-            if not profile.role == 0:
+            profile = get_current_profile(request)
+            if not profile.role == Profile.USER:
                 return redirect(request.META.get('HTTP_REFERER'))
             if 'class_id' in request.POST:  # change privileges for class operator
                 class_id = request.POST.get('class_id')
                 class_instance = get_object_or_404(Class, id=class_id)
-                profile.role = 3
+                profile.role = Profile.CLASS_MANAGER
                 profile.class_id = class_instance
             # change privileges for school operator
-            elif 'school_id' in request.POST and not request.user.profile.role == 2:
+            elif 'school_id' in request.POST and not profile.role == Profile.SHCOOL_MANAGER:
                 school_id = request.POST.get('school_id')
                 school_instance = get_object_or_404(School, id=school_id)
-                profile.role = 2
+                profile.role = Profile.SHCOOL_MANAGER
                 profile.school_id = school_instance
             profile.save()
             # Redirect to a success page or another URL
@@ -1198,13 +1264,17 @@ def mod_add_operator(request):
 
 
 @csrf_protect
-@role_required(1, 2, 4)
+@role_required(
+    Profile.ADMIN,
+    Profile.MODERATOR,
+    Profile.SHCOOL_MANAGER
+)
 def mod_remove_privileges(request, profile_id: int):
     profile = get_object_or_404(Profile, id=profile_id)
     # Clear privileges
     profile.class_id = None
     profile.school_id = None
-    profile.role = 0
+    profile.role = Profile.USER
     profile.save()
     return redirect(request.META.get('HTTP_REFERER'))
 

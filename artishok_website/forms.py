@@ -115,9 +115,9 @@ class MealForm(forms.ModelForm):
         }
 
 
-class CartForm(forms.ModelForm):
+class OrderForm(forms.ModelForm):
     class Meta:
-        model = Cart
+        model = Order
         fields = ['comment']
         labels = {
             'comment': 'Коментар до замовлення',

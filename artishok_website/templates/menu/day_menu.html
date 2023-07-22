@@ -5,7 +5,7 @@
 
 {% block additional_nav_btn %}
 <li>
-    <a href="{% url 'cart' cart_id=cart.id %}">Кошик ({{cart.pupil_id.first_name}})</a>
+    <a href="{% url 'cart' child_id=child.id %}">Кошик ({{child.pupil_id.first_name}})</a>
 </li>
 {% endblock %}
 
@@ -31,11 +31,11 @@
                         <svg class="icon-menu" width="20" height="15">
                             <use xlink:href="/static/images/symbol-defs.svg#icon-arrow">
                             </use>
-                          </svg>
+                        </svg>
                     </label>
                     <div class="grid-menu">
                         {% for item in menu.items %}
-                        {% include "menu/dish_card.html" with cart_id=cart.id item=item meal_id=menu.meal.id%}
+                        {% include "menu/dish_card.html" with child_id=child.id item=item meal_id=menu.meal.id%}
                         {% endfor %}
                     </div>
                 </div>
@@ -45,7 +45,7 @@
     </div>
     <div class="navigation_buttons">
         <div class="row">
-            {% include "menu/navigation_buttons.html" with dates=dates cart_id=cart.id current_date=date %}
+            {% include "menu/navigation_buttons.html" with dates=dates selected_date=date %}
         </div>
     </div>
 </div>
@@ -53,6 +53,6 @@
 
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script>var cartId = {{ cart.id }}</script>
-<script src="{% static 'js/dish_card.js' %}"></script>
+<script>var pupilId = {{ child.pupil_id.id }}</script>
+<script src="{% static 'js/day_menu.js' %}"></script>
 {% endblock %}

@@ -22,11 +22,11 @@
         </div>
 
         <div class="list_buttons">
-            {% if child.verified == 1%}
-            <a href="{% url 'menu_days' cart_id=cart.id %}" class="a_btn">
+            {% if child.verified == "OK" %}
+            <a href="{% url 'menus' child_id=child.id %}" class="a_btn">
                 Меню
             </a>
-            <a href="{% url 'cart' cart_id=cart.id %}" class="a_btn">
+            <a href="{% url 'cart' child_id=child.id %}" class="a_btn">
                 Кошик
             </a>
             {% endif %}

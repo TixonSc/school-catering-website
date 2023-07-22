@@ -10,13 +10,13 @@
         <a class="button-add button" href="{% url 'add_child'%}" name="add_child_button">Додати</a>
         <div class="card-list">
             {% for card in cards %}
-            {% if card.child.verified == 1 %}
-            {% include "children/child_card.html" with child=card.child cart=card.cart%}
+            {% if card.child.verified == "OK" %}
+            {% include "children/child_card.html" with child=card.child %}
             {% endif %}
             {% endfor %}
             {% for card in cards %}
-            {% if card.child.verified == 0 %}
-            {% include "children/child_card.html" with child=card.child cart='0'%}
+            {% if card.child.verified == "RQ" %}
+            {% include "children/child_card.html" with child=card.child %}
             {% endif %}
             {% endfor %}
         </div>

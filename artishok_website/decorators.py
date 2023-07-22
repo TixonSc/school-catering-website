@@ -1,7 +1,7 @@
 from functools import wraps
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
-from .models import Cart, Child
+from .models import Child
 
 
 def admin_only(function):
@@ -37,17 +37,17 @@ def role_required(*roles):
         return wrapper
     return decorator
 
-def can_access_cart():
-    def decorator(view_func):
-        @wraps(view_func)
-        @profile_required
-        def wrapped_view(request, cart_id, *args, **kwargs):
-            try:
-                cart = Cart.objects.get(id=cart_id)
-                # Find the Child object with matching pupil_id and parent_id
-                Child.objects.get(pupil_id=cart.pupil_id, parent_id=request.user.profile)
-            except (Cart.DoesNotExist, Child.DoesNotExist):
-                return 404 # or any other appropriate response 
-            return view_func(request, cart_id, *args, **kwargs)
-        return wrapped_view
-    return decorator
+# def can_access_cart():
+#     def decorator(view_func):
+#         @wraps(view_func)
+#         @profile_required
+#         def wrapped_view(request, cart_id, *args, **kwargs):
+#             try:
+#                 cart = Cart.objects.get(id=cart_id)
+#                 # Find the Child object with matching pupil_id and parent_id
+#                 Child.objects.get(pupil_id=cart.pupil_id, parent_id=request.user.profile)
+#             except (Cart.DoesNotExist, Child.DoesNotExist):
+#                 return 404 # or any other appropriate response 
+#             return view_func(request, cart_id, *args, **kwargs)
+#         return wrapped_view
+#     return decorator

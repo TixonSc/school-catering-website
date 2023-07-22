@@ -7,8 +7,19 @@ class ArchivedObjectAdmin(admin.ModelAdmin):
         return self.model.all_objects.all()
 
 
-admin.site.register([MenuItem, Meal, Pupil, Cart,
-                    CartItem, Profile, Unit, Ingredient, Order, OrderItem])
+admin.site.register(
+    [
+        MenuItem, 
+        Meal, 
+        Pupil,
+        Profile,
+        ClassManager,
+        SchoolManager,
+        Unit, 
+        Ingredient, 
+        Order,
+    ]
+)
 
 admin.site.register(Dish, ArchivedObjectAdmin)
 admin.site.register(School, ArchivedObjectAdmin)
