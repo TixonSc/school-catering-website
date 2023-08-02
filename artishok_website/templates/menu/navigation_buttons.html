@@ -1,6 +1,6 @@
 {% for date in dates%}
 {% if date != selected_date %}
-<a href="{% url 'menu_day' date=date%}">
+<a href="{% url 'menu_date' child_id=child.id date=date%}">
     <div class="item">
         {{ date|date:"l" }}
     </div>

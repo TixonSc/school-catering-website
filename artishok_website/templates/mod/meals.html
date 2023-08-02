@@ -1,0 +1,88 @@
+{% extends "mod/base_mod.html" %}
+{% load static %}
+
+{% block title %}Прийоми їжі{% endblock %}
+
+{% block script %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{% static 'js/mod_meals.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+<div class="templates">
+    <div id="template-days">
+        <fieldset>
+            <legend>Шаблони Днів</legend>
+        </fieldset>
+    </div>
+    <div id="template-meals">
+        <fieldset>
+            <legend>Шаблони Прийомів їжі</legend>
+        </fieldset>
+    </div>
+</div>
+
+<div id="meals">
+    <div id="construstor">
+        <fieldset>
+            <legend>Прийом їжі</legend>
+            <div class="date">
+                <div>
+                    <label for="date">Дата:</label>
+                    <input type="date" id="date" value="">
+                </div>
+            </div>
+
+            <div class="time">
+                <div>
+                    <label for="time">Час:</label>
+                    <input type="time" id="time" value="10:00">
+                </div>
+            </div>
+
+            <div class="name">
+                <label for="name" style="font-size: 12px;">Назва:</label>
+                <input type="text" name="name" id="name">
+            </div>
+            
+            <div class="menu">
+                <label for="menu_id" style="font-size: 12px;">Меню:</label>
+                <select name="menu_id" id="menu_id">
+                    {% for menu in menus %}
+                    <option value="{{ menu.id }}">{{ menu.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="btn">
+                <input type="button" id="btn-add" value="Додати" disabled>
+            </div>
+        </fieldset>
+    </div>
+</div>
+
+<div class="school">
+    <fieldset>
+        <legend>Школа</legend>
+        <div id="schools-info">
+        
+        </div>
+        <div>
+            <label class="label" for="school-select">Виберіть школу:</label>
+            <select class="select" id="school-select" name="school-select">
+                <option value="" selected>Не обрано</option>
+            </select>
+        </div>
+    </fieldset>
+</div>
+
+<div class="calendar">
+    <fieldset>
+        <legend>Календар</legend>
+        <div id="calendar">
+        </div>
+    </fieldset>
+</div>
+
+{% endblock %}

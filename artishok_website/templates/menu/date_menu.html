@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Меню {{cart.pupil_id.first_name}}{% endblock%}
+{% block title %}Меню {{child.pupil_id.first_name}}{% endblock%}
 
 {% block additional_nav_btn %}
 <li>
@@ -54,5 +54,5 @@
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>var pupilId = {{ child.pupil_id.id }}</script>
-<script src="{% static 'js/day_menu.js' %}"></script>
+<script src="{% static 'js/date_menu.js' %}"></script>
 {% endblock %}

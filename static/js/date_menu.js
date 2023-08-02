@@ -20,7 +20,7 @@ $(document).ready(function() {
             var counter = $(this).find('.counter');
 
             $.ajax({
-                url: '/change-count/',
+                url: '/post/order/count/',
                 type: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
@@ -49,7 +49,7 @@ function new_count_portions(itemId, mealId, newCount) {
     var counter = item.find('.counter');
 
     $.ajax({
-        url: '/change-count/',
+        url: '/post/order/count/',
         type: 'POST',
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),

@@ -386,8 +386,8 @@ function appendOrderToOrdersList(order) {
                 </a>
             </div>
             `;
-        //console.log("html:",  htmlElement);
-        $('#orders-list').append(htmlElement);
+    //console.log("html:",  htmlElement);
+    $('#orders-list').append(htmlElement);
 }
 
 $(document).ready(function() {

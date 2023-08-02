@@ -22,7 +22,6 @@ import pandas
 #   ADDITION functions
 # ----------------------------------------------------------------
 
-
 @login_required
 def get_current_user(request) -> User:
     return request.user
@@ -35,24 +34,26 @@ def get_current_profile(request) -> Profile:
     return None
 
 
-def available_days_to_order_for_school(school):
-    COUNT_OF_DAYS_FOR_MENU = 21
-    start_next_week = get_start_available_date()
-    dates = list()
-    for i in range(COUNT_OF_DAYS_FOR_MENU):
-        day = Meal.objects.filter(
-            date=(start_next_week + datetime.timedelta(i)), school_id=school)
-        if day:
-            dates.append(day[0].date)
-    return dates
-
-
 def get_start_available_date(): 
     today = datetime.datetime.now().date()
     weekday_today = today.weekday()
     start_this_week_date = today - datetime.timedelta(weekday_today)
     start_next_week_date = start_this_week_date + datetime.timedelta(7 if weekday_today < 5 else 14) # перевірка на день тижня  якщо вже п'ятниця скіп на +1 тижденьІ
     return start_next_week_date
+
+
+def available_dates_to_order_for_school(school_id):
+    COUNT_OF_DAYS_FOR_MENU = 21
+    start_next_week = get_start_available_date()
+    print(f"START {start_next_week}")
+    dates = list()
+    for i in range(COUNT_OF_DAYS_FOR_MENU):
+        day = Meal.objects.filter(
+            date=(start_next_week + datetime.timedelta(i)), school_id=school_id)
+        if day:
+            dates.append(day[0].date)
+    print(f"dates {dates}")
+    return dates
 
 
 def get_cart_items_by_child(child):
@@ -64,11 +65,14 @@ def get_cart_items_by_child(child):
 
 @api_view(['POST'])
 @profile_required
-def change_count(request):
+def post_order_count(request):
     menu_item_id = request.POST['item_id']
     meal_id = request.POST['meal_id']
     pupil_id = request.POST['pupil_id']
     profile = get_current_profile(request)
+    pupil = Pupil.objects.get(id=pupil_id)
+    meal = Meal.objects.get(id=meal_id)
+    menu_item = MenuItem.objects.get(id=menu_item_id)
     count = int(0)
 
     if 'new_count' in request.POST:
@@ -77,21 +81,24 @@ def change_count(request):
         if new_count > 0:
             order, flag = Order.objects.get_or_create(
                 profile_id=profile,
-                pupil_id=pupil_id,
-                menu_item_id=menu_item_id,
-                meal_id=meal_id,
+                pupil_id=pupil,
+                menu_item_id=menu_item,
+                meal_id=meal,
+                price=menu_item.price * (new_count - 1),
+                count=(new_count - 1),
                 status=Order.CART
             )
             order.count = new_count
+            order.price = menu_item.price * new_count
             order.save()
             count = order.count
         else:
             try:
                 order = Order.objects.get(
                     profile_id=profile,
-                    pupil_id=pupil_id,
-                    menu_item_id=menu_item_id,
-                    meal_id=meal_id,
+                    pupil_id=pupil,
+                    menu_item_id=menu_item,
+                    meal_id=meal,
                     status=Order.CART
                 )
 
@@ -108,9 +115,9 @@ def change_count(request):
         try:
             order = Order.objects.get(
                 profile_id=profile,
-                pupil_id=pupil_id,
-                menu_item_id=menu_item_id,
-                meal_id=meal_id,
+                pupil_id=pupil,
+                menu_item_id=menu_item,
+                meal_id=meal,
                 status=Order.CART
             )
 
@@ -118,19 +125,23 @@ def change_count(request):
 
         #error not found
         except Exception as e:
-            count = int(-1)
             print(f"ERROR {e}") #exception
 
         finally:
-            data = { 'count': count }
+            pass
+    data = { 'count': count }
     return JsonResponse(data)
 
 
 # @api_view(['POST'])
 @profile_required
-def reserving_orders(request, child_id):
+def reserving_orders(request, pupil_id):
     profile = get_current_profile(request)
-    child = Child.objects.get(id=child_id)
+    pupil = Pupil.objects.get(id=pupil_id)
+    child = Child.objects.get(
+        pupil_id=pupil,
+        parent_id=profile
+    )
     
     orders_cart = Order.objects.filter(
         pupil_id=child.pupil_id,
@@ -140,10 +151,11 @@ def reserving_orders(request, child_id):
 
     for order in list(orders_cart):
         order.status = Order.RESERVED
-        order.price = order.menu_item_id.price
         profile.debt -= order.price # TODO: defense
         order.save()
         profile.save()
+    
+    return redirect('orders')
 
 
 @api_view(['GET'])
@@ -176,6 +188,8 @@ def delete_all_overdue_orders_by_profile(profile: Profile):
 # ----------------------------------------------------------------
 
 
+
+
 @api_view(['GET'])
 @profile_required
 def retrieve_orders_json(request):
@@ -183,6 +197,65 @@ def retrieve_orders_json(request):
     orders = Order.objects.filter(profile_id=profile)
     orders_json = serializers.serialize('json', orders)
     return JsonResponse(orders_json, safe=False)
+
+# Non safe JSON serialization
+def json_(objects):
+    return serializers.serialize('json', [objects])
+
+@api_view(['GET'])
+@profile_required
+def response_mod_meals_json(request):
+    today = datetime.datetime.now().date()
+    endday = today + datetime.timedelta(28)
+    data = {
+        'schools': list(
+            {
+                'data': None,
+                'meals': None,
+            }
+        ),
+    }
+
+    schools = School.objects.filter()
+    for school in schools:
+        meals = Meal.objects.filter(
+            school_id=school,
+            date__gt=today,
+            date__lte=endday
+        )
+        data['schools'].append({
+            'data': json.dumps(school),
+            'meals': json_(meals)
+        })
+    
+    return JsonResponse(data, safe=False)
+
+@api_view(['GET'])
+@profile_required
+def response_meals_json(request, school_id, date):
+    school = School.objects.get(id=school_id)
+    meals = Meal.objects.filter(
+        school_id=school,
+        date=date
+    )
+    print(f"date {date} meals {list(meals)}")
+
+    meals_json = serializers.serialize('json', meals)
+    data = {
+        'meals': meals_json,
+    }
+    return JsonResponse(data, safe=False)
+
+
+@api_view(['GET'])
+@profile_required
+def retrieve_schools_json(request):
+    schools = School.objects.filter()
+    schools_json = serializers.serialize('json', schools)
+    data = {
+        'schools': schools_json,
+    }
+    return JsonResponse(data, safe=False)
 
 
 @api_view(['GET'])
@@ -197,6 +270,9 @@ def retrieve_schools_and_classes_json(request):
         'classes': classes_json,
     }
     return JsonResponse(data, safe=False)
+
+
+
 
 
 # ----------------------------------------------------------------
@@ -257,19 +333,31 @@ def logout_view(request):
 # Create
 @login_required
 def create_profile_view(request):
+    message = ''
     current_user = get_current_user(request)
     new_profile = Profile(user=current_user)
     form = ProfileForm(instance=new_profile)
 
     if request.method == 'POST':
         if 'confirm_button' in request.POST:
-            form = ProfileForm(request.POST, instance=new_profile)
-            if form.is_valid():
-                form.save()
-            return redirect('profile')
+            form_data = request.POST.copy()
+            code = form_data['school_code']
+            print(f"CODE\t{code}")
+            school = School.objects.filter(code=code)
+            if school.count() > 0:
+                form = ProfileForm(request.POST, instance=new_profile)
+                if form.is_valid():
+                    form.save()
+                    prof = get_current_profile(request)
+                    prof.school_id = school.first()
+                    prof.save()
+                return redirect('profile')
+            else:
+                message = "Не вірний код школи!"
     context = {
         'profile': new_profile,
         'form': form,
+        'message': message
     }
     return render(request, 'profile/create.html', context)
 
@@ -419,8 +507,9 @@ def delete_child(request, child_id):
 # Menu-days
 def available_menus_view(request, child_id):
     profile = get_current_profile(request)
-    school = profile.school_id
-    dates = available_days_to_order_for_school(school)
+    child = Child.objects.get(id=child_id, parent_id=profile)
+    school = School.objects.get(id=profile.school_id.id)
+    dates = available_dates_to_order_for_school(school)
     meals = Meal.objects.filter(school_id=school, date__in=dates)
     cards = list()
 
@@ -434,18 +523,22 @@ def available_menus_view(request, child_id):
                 }
             )
 
+    print(f"\n\tDATES {dates}")
+
     context = {
         'profile': profile,
         'cards': cards,
+        'child': child,
     }
-    return render(request, 'menu/days_menu.html', context=context)
+    return render(request, 'menu/dates.html', context=context)
 
 
 # Menu-day
 def menu_date_view(request, child_id, date):
     profile = get_current_profile(request)
+    child = Child.objects.get(id=child_id)
     school = profile.school_id
-    dates_of_menu = available_days_to_order_for_school(school)
+    dates_of_menu = available_dates_to_order_for_school(school)
     date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
     if not (date in dates_of_menu):
@@ -467,11 +560,12 @@ def menu_date_view(request, child_id, date):
 
     context = {
         'profile': profile,
+        'child': child,
         'data': data,
         'date': date,
         'dates': dates_of_menu,
     }
-    return render(request, 'menu/day_menu.html', context)
+    return render(request, 'menu/date_menu.html', context)
 
 
 # Cart
@@ -504,24 +598,25 @@ def cart_view(request, child_id):
             ),
         })
 
-    orders_form = OrderForm(instance=order)
-    if request.method == 'POST':
-        if 'confirm_button' in request.POST:
-            for order in cart:
-                orders_form = OrderForm(request.POST, instance=order)
-                if orders_form.is_valid():
-                    orders_form.save()
-                    comment = orders_form.data['comment']
-                    order.comment = comment
-                    order.save()
-            reserving_orders(request)
-            return redirect('orders')
+    # orders_form = OrderForm(instance=order)
+    # if request.method == 'POST':
+    #     if 'confirm_button' in request.POST:
+    #         for order in cart:
+    #             orders_form = OrderForm(request.POST, instance=order)
+    #             if orders_form.is_valid():
+    #                 orders_form.save()
+    #                 comment = orders_form.data['comment']
+    #                 order.comment = comment
+    #                 order.save()
+    #         reserving_orders(request)
+    #         return redirect('orders')
 
     context = {
         'profile': profile,
+        'child': child,
         'cart': cart,
         'data': data,
-        'comment': orders_form,
+        # 'comment': orders_form,
     }
     return render(request, 'cart/cart.html', context)
 
@@ -612,7 +707,7 @@ def sidebar_by_profile(p: Profile) -> dict:
     menu_items = {}
     if p.role == Profile.MODERATOR or p.role == Profile.ADMIN:  # модератору та адміну більшість пунктів меню
         menu_items = {
-            'list_meals': 'Прийоми їжі',
+            'meals': 'Прийоми їжі',
             'list_dishes': 'Страви',
             'list_menus': 'Меню',
             'list_products': 'Продукти',
@@ -864,6 +959,32 @@ def retrieve_table(request):
     if request.data['need'] == "file":
         return table_to_csv_responce(table)
     
+
+@api_view(['POST'])
+@role_required(Profile.ADMIN)
+def add_meal(request):
+    print(f"POST MEAL {request.data}")
+    data = request.data
+    date = data['date']
+    time = data['time']
+    name = data['name']
+    school_id = int(data['school_id'])
+    menu_id = int(data['menu_id'])
+    school = School.objects.get(id=school_id)
+    menu = Menu.objects.get(id=menu_id)
+    meal = Meal.objects.create(
+        date=date,
+        time=time,
+        name=name,
+        school_id=school,
+        menu_id=menu
+    )
+    meal.save()
+    print(f"MEAL {meal}")
+    data = {
+        "success": False
+    }
+    return JsonResponse(data)
 
 # ----------------------------------------------------------------
 #           MOD VIEWS
@@ -1125,7 +1246,7 @@ def edit_product(request, product_id):
     Profile.ADMIN,
     Profile.MODERATOR
 )
-def mod_list_meals(request, year: int = 0, month: int = 0, day: int = 0):
+def mod_meals_view(request, year: int = 0, month: int = 0, day: int = 0):
     if request.method == 'POST':
         name = request.POST.get('name')
         menu_id = request.POST.get('menu_id')
@@ -1138,7 +1259,7 @@ def mod_list_meals(request, year: int = 0, month: int = 0, day: int = 0):
         meal = Meal(name=name, menu_id=menu_id, date=date,
                     time=time, school_id=school_id)
         meal.save()
-        return redirect('list_meals', year=year, month=month, day=day) if year and month and day else redirect('list_meals')
+        return redirect('meals', year=year, month=month, day=day) if year and month and day else redirect('meals')
     date = datetime.date(
         year, month, day) if year and month and day else datetime.date.today()
     week: dict = next_week_dates(date)
@@ -1168,7 +1289,7 @@ def mod_list_meals(request, year: int = 0, month: int = 0, day: int = 0):
         'dates': week,
         'data': data
     }
-    return custom_render(request, 'mod/list_meals.html', context)
+    return custom_render(request, 'mod/meals.html', context)
 
 
 # SCHOOLS EDIT

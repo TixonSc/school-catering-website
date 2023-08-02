@@ -10,6 +10,10 @@
         <form class="form" method="post" autocomplete="off">
             {% csrf_token %}
             <p>
+                <label class="label" for="id_school_code">Код школи:</label>
+                <input class="input-text" type="text" name="school_code"  maxlength="16" required id="id_school_code">
+            </p>
+            <p>
                 <label class="label" for="id_first_name">Ім`я:</label>
                 <input class="input-text" type="text" name="first_name"  maxlength="64" required id="id_first_name">
             </p>
@@ -20,6 +24,9 @@
             <p>
                 <label class="label" for="id_phone_number">Номер телефону:</label>
                 <input class="input-text" type="text" name="phone_number"  required id="id_phone_number">
+            </p>
+            <p>
+                <label>{{ message }}</label>
             </p>
             <button class="button" type="submit" name="confirm_button">Підтвердити</button>
         </form>

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Кошик ({{cart.pupil_id.first_name}}){% endblock%}
+{% block title %}Кошик ({{child.pupil_id.first_name}}){% endblock%}
 
 {% block additional_nav_btn %}
 <li>
-    <a href="{% url 'menu_days' cart_id=cart.id %}">Меню ({{cart.pupil_id.first_name}})</a>
+    <a href="{% url 'menus' child_id=child.id %}">Меню ({{child.pupil_id.first_name}})</a>
 </li>
 {% endblock %}
 
@@ -21,7 +21,7 @@
     <div class="grid">
         {% for day in data.days %}
         <div class="day">
-            <a href="{% url 'menu_day' cart_id=cart.id date=day.date %}">
+            <a href="{% url 'menu_date' child_id=child.id date=day.date %}">
                 <h2>
                 {{ day.date|date:"l" }}
                 </h2>
@@ -29,7 +29,7 @@
             {% for meal in day.meals %}
             <div class="meal" data-meal-id="{{meal.meal.id}}">
                 {% for item in meal.items %}
-                {% include "cart/cart_item_card.html" with cart_id=cart.id item=item.menu_item_id meal_id=meal.meal.id%}
+                {% include "cart/cart_item_card.html" with item=item.menu_item_id meal_id=meal.meal.id%}
                 {% endfor %}
             </div>
             {% endfor %}
@@ -39,12 +39,12 @@
 </div>
 
 <div class="comment">
-    <button class="cart-btn" type="submit" name="confirm_button">Підтвердити</button>
+    <button class="cart-btn" type="submit" name="confirm_button" onclick="confirmOrder()">Підтвердити</button>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script>var cartId = {{ cart.id }}</script>
-<script src="{% static 'js/cart_item_card.js' %}"></script>
+<script>var pupilId = {{ child.pupil_id.id }}</script>
+<script src="{% static 'js/cart.js' %}"></script>
 {% endblock %}

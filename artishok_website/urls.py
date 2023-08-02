@@ -16,9 +16,21 @@ urlpatterns = [
     path('profile/create/', views.create_profile_view, name='create_profile'),
     path('profile/edit/', views.edit_profile_view, name='edit_profile'),
 
+    #CONFIRMERS
+    path('confirm/order/<int:pupil_id>/', views.reserving_orders, name='post_meal'),
+
+    #POSTERS
+    path('add/meal/', views.add_meal, name='post_meal'),
+    path('post/order/count/', views.post_order_count, name='post_order_count'),
+
+    #GETTERS
+    path('get/mod_meals/', views.response_mod_meals_json, name='get_mod_meals'),
+    path('get/meals/<int:school_id>/<str:date>/', views.response_meals_json, name='get_meals'),
+    path('get/schools/', views.retrieve_schools_json, name='get_schools'),
+    path('get/schools_classes/', views.retrieve_schools_and_classes_json, name='get_schools_classes'),
+    path('get/orders/', views.retrieve_orders_json, name='get_orders'),
 
     #CHILDREN`s pages
-    path('get/schools_classes/', views.retrieve_schools_and_classes_json, name='get_schools_classes'),
     path('children/', views.children_view, name='children'),
     path('children/add/', views.add_child_view, name='add_child'),
     path('children/delete/<int:child_id>/', views.delete_child, name='delete_child'),
@@ -26,12 +38,10 @@ urlpatterns = [
 
     path('child/<int:child_id>/menus/', views.available_menus_view, name='menus'),
     path('child/<int:child_id>/menu-date/<str:date>/', views.menu_date_view, name='menu_date'), # TODO: day to date
-    path('change-count/', views.change_count, name='change_count'),
     path('child/<int:child_id>/cart/', views.cart_view, name='cart'), #корзина конкретної дитини    
     # path('cart/<int:cart_id>/confirm/', views.confirm_cart, name='confirm_cart'), #підтвердження замовлення кошика
 
 
-    path('get/orders/', views.retrieve_orders_json, name='get_orders'),
     # TODO: child orders - in future 
     # path('child/<int:child_id>/orders/', views.orders_view, name='orders'), #всі замовлення на конкретну дитину
     path('orders/', views.orders_view, name='orders'), #всі замовлення по всім дітям користувача які були
@@ -43,8 +53,8 @@ urlpatterns = [
     path('mod/', views.mod_index, name='mod_index'), 
     path('mod/update_request/<int:child_id>/<int:status>/', views.update_request, name='update_request'),
     path('mod/requests/', views.applications_page, name='applications'),
-    path('mod/meals/', views.mod_list_meals, name='list_meals'),
-    path('mod/meals/<int:year>-<int:month>-<int:day>/', views.mod_list_meals, name='list_meals'),
+    path('mod/meals/', views.mod_meals_view, name='meals'),
+    path('mod/meals/<int:year>-<int:month>-<int:day>/', views.mod_meals_view, name='meals'),
     path('mod/dishes/', views.mod_list_dishes, name='list_dishes'),
 
     path('get/table/', views.retrieve_table, name='get_table'), 
